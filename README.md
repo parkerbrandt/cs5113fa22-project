@@ -32,3 +32,6 @@
 
 
 ## Emoji Chooser
+To initialize the board, I will take in an integer input of N, and using that, the server will create an array of size N x N. After this, whenever a Pokemon or Trainer is created, they will send a message to the server including their name and whether they are a trainer or pokemon. The server will then designate a spot for them on the board if it is not full by choosing two random numbers to correspond to coordinates.
+
+I am currently still figuring out how to fully accomplish this, but I think in the docker-compose file, I will have it create a Server, 1 Trainer, and 1 Pokemon, and then based off how many trainers and pokemon are wanted, I will look at trying to have those machines create new ones.
