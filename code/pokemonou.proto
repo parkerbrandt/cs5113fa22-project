@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package pokemonOU;
+
+service PokemonOU {
+
+    // Server Services
+    rpc Captured() returns () {}
+
+	// Services ran on the server for both Trainers and Pokemon
+	rpc CheckBoard(Location) returns (Location[]) {}
+    rpc Move() returns () {}
+    rpc ShowPath() returns () {}
+
+    // Trainer Services
+    rpc Capture() returns () {}
+    rpc ShowPokedex() returns () {}
+
+    // Pokemon Services
+    rpc ShowTrainerInfo() returns () {}
+}
