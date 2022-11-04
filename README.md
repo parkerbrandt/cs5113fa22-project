@@ -43,6 +43,7 @@ In the proto file, I separate the functions in the PokemonOU service by which ma
 
 
 First are the services that the Server will be calling:
+    
     - rpc Captured(Name) returns (Pokemon) {}
         This function has the server notify a Pokemon that they are captured. The server will input a name that will be checked, and then it will return the full Pokemon's information it can use to talk to the Pokemon.
 
@@ -54,6 +55,7 @@ First are the services that the Server will be calling:
 
 
 Next, are the functions that both Trainers and Pokemon will be calling:
+    
     - rpc Initialize(Name) returns (Emoji) {}
         This function is called whenever a Trainer machine or Pokemon machine is first created. The node will send their name and type to the server, and the server will then register the Trainer/Pokemon internally, and return an available emoji for them to use, which the machine will then keep track of.
     
@@ -68,6 +70,7 @@ Next, are the functions that both Trainers and Pokemon will be calling:
 
 
 Next, are the functions that the Trainers will be calling
+    
     - rpc Capture(Name) returns (Pokemon)
         This function will have the Trainer give the name or emoji identification of a Pokemon, then the Server will check if that Pokemon is "catchable", and will return the Pokemon's information and the Trainer will be able to check by their status if they were caught or not.
 
@@ -76,6 +79,7 @@ Next, are the functions that the Trainers will be calling
 
 
 Lastly, are the functions that only the Pokemon will be calling
+    
     - rpc ShowTrainerInfo(Name) returns (Trainer) {}
         This function takes the name of a Pokemon, then finds the designated trainer for that Pokemon, if it has one. It will return a Trainer object, but if the Pokemon has no trainer, the name will be "empty"
 
