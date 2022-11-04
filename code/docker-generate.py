@@ -25,24 +25,24 @@ def generateDockerComposeYML(numT, numP):
         dcfile.write(header)
         
         # Create the server machine
-        serverLines=['\tserver:', '\t\tbuild: .', '\t\thostname: server', '\t\tcontainer_name: Server', '\t\tnetworks:', '\t\t\t - default']
+        serverLines=['  server:', '    build: .', '    hostname: server', '    container_name: Server', '    networks:', '       - default']
         for line in serverLines:
             dcfile.write(line + '\n')
 
         # Create a new machine for each trainer
         for i in range(0, numT):
-            trainerLines=['\tclient' + str(i) +':', '\t\tbuild: .', '\t\thostname: trainer' + str(i), '\t\tcontainer_name: Trainer' + str(i), '\t\tnetworks:', '\t\t\t - default']
+            trainerLines=['  client' + str(i) +':', '    build: .', '    hostname: trainer' + str(i), '    container_name: Trainer' + str(i), '    networks:', '       - default']
             for line in trainerLines:
                 dcfile.write(line + '\n')
 
         # Create a new machine for each pokemon
         for i in range(0, numP):
-            pokemonLines=['\tclient' + str(i + numTrainers) +':', '\t\tbuild: .', '\t\thostname: pokemon' + str(i), '\t\tcontainer_name: Pokemon' + str(i), '\t\tnetworks:', '\t\t\t - default']
+            pokemonLines=['  client' + str(i + numTrainers) +':', '    build: .', '    hostname: pokemon' + str(i), '    container_name: Pokemon' + str(i), '    networks:', '       - default']
             for line in pokemonLines:
                 dcfile.write(line + '\n')
 
         # Add the network code at the bottom
-        networkLines=['networks:', '\tdefault:', '\t\tdriver: bridge']
+        networkLines=['networks:', '  default:', '    driver: bridge']
         for line in networkLines:
             dcfile.write(line + '\n')
 
