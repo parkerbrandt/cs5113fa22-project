@@ -1,11 +1,20 @@
-
+"""
+Gets the input values from the user
+"""
 def getInputParameters():
     gridsize = int(input('Size of grid: '))
     numT = int(input('Number of Trainers: '))
     numP = int(input('Number of Pokemon: '))
     return gridsize, numT, numP
 
-def generateDockerComposeYML(numTrainers, numPokemon):
+
+"""
+Generates a docker-compose.yml file
+
+Creates 1 server machine, numT trainers, and numP pokemon with their own containers
+Also creates a default network that each container can use 
+"""
+def generateDockerComposeYML(numT, numP):
 
     version='version: \'3.7\''
     header='service:\n'
@@ -17,12 +26,12 @@ def generateDockerComposeYML(numTrainers, numPokemon):
     dcfile.writelines(serverLines)
 
     # Create a new machine for each trainer
-    for i in range(0, numTrainers):
+    for i in range(0, numT):
         trainerLines=['\tclient' + str(i) +':', '\t\tbuild: .', '\t\thostname: trainer' + str(i), '\t\tcontainer_name: Trainer' + str(i), '\t\tnetworks:', '\t\t\t - default']
         dcfile.writelines(trainerLines)
 
     # Create a new machine for each pokemon
-    for i in range(0, numPokemon):
+    for i in range(0, numP):
         pokemonLines=['\tclient' + str(i + numTrainers - 1) +':', '\t\tbuild: .', '\t\thostname: pokemon' + str(i), '\t\tcontainer_name: Pokemon' + str(i), '\t\tnetworks:', '\t\t\t - default']
         dcfile.writelines(pokemonLines)
 
@@ -33,6 +42,10 @@ def generateDockerComposeYML(numTrainers, numPokemon):
     dcfile.close()
     return
 
+
+"""
+Start of Program Logic
+"""
 if __name__ == '__main__':
     # Get the input parameters
     gridsize, numTrainers, numPokemon = getInputParameters()
