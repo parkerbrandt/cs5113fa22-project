@@ -10,7 +10,8 @@ service PokemonOU {
     rpc Board() returns (Board) {}
 
 	// Services ran on the server for both Trainers and Pokemon
-	rpc CheckBoard(Location) returns (LocationList) {}
+	rpc Initialize(Name) returns (Emoji) {}
+    rpc CheckBoard(Location) returns (LocationList) {}
     rpc Move(Move) returns (Move) {}
     rpc ShowPath(Name) returns (LocationList) {}
 
@@ -28,9 +29,13 @@ message Name {
     string type = 2;            // Will either be "trainer" or "pokemon"
 }
 
+message Emoji {
+    int32 emojiID = 1;
+}
+
 message Trainer {
     string name = 1;
-    string emoji = 2;    
+    Emoji emoji = 2;    
     int32 xLocation = 3;
     int32 yLocation = 4;
 }
@@ -39,7 +44,7 @@ message Pokemon {
     string name = 1;
     string status = 2;          // The status of the Pokemon can be one of:
                                 // "free" or "captured"
-    string emoji = 3;
+    Emoji emoji = 3;
     int32 xLocation = 4;
     int32 yLocation = 5;
 }
