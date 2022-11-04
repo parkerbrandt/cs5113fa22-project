@@ -1,0 +1,35 @@
+version: '3.7'
+service:
+	server:
+		build: .
+		hostname: server
+		container_name: Server
+		networks:
+			 - default
+	client0:
+		build: .
+		hostname: trainer0
+		container_name: Trainer0
+		networks:
+			 - default
+	client1:
+		build: .
+		hostname: trainer1
+		container_name: Trainer1
+		networks:
+			 - default
+	client2:
+		build: .
+		hostname: pokemon0
+		container_name: Pokemon0
+		networks:
+			 - default
+	client3:
+		build: .
+		hostname: pokemon1
+		container_name: Pokemon1
+		networks:
+			 - default
+networks:
+	default:
+		driver: bridge
