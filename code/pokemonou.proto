@@ -5,17 +5,67 @@ package pokemonOU;
 service PokemonOU {
 
     // Server Services
-    rpc Captured() returns () {}
+    rpc Captured(Name) returns (Pokemon) {}
+    rpc Moves() returns (MoveList) {}
+    rpc Board() returns (Board) {}
 
 	// Services ran on the server for both Trainers and Pokemon
 	rpc CheckBoard(Location) returns (Location[]) {}
-    rpc Move() returns () {}
-    rpc ShowPath() returns () {}
+    rpc Move(Action) returns (MoveStatus) {}
+    rpc ShowPath(Name) returns (Location[]) {}
+
 
     // Trainer Services
-    rpc Capture() returns () {}
-    rpc ShowPokedex() returns () {}
+    rpc Capture(Pokemon) returns (Pokemon) {}
+    rpc ShowPokedex(Name) returns (Pokedex) {}
 
     // Pokemon Services
-    rpc ShowTrainerInfo() returns () {}
+    rpc ShowTrainerInfo(Name) returns (Trainer) {}
+}
+
+message Name {
+    string name = 1;
+    string type = 2;            // Will either be "trainer" or "pokemon"
+}
+
+message Trainer {
+    string name = 1;
+    string emoji = 2;    
+    int32 xLocation = 3;
+    int32 yLocation = 4;
+}
+
+message Pokemon {
+    string name = 1;
+    string status = 2;          // The status of the Pokemon can be one of:
+                                // "free" or "captured"
+    string emoji = 3;
+    int32 xLocation = 4;
+    int32 yLocation = 5;
+}
+
+message Pokedex {
+    string trainername = 1;         // The name of the trainer who owns these Pokemon
+    repeated string pokemonnames;   // The names of the pokemon in the pokedex
+}
+
+message Board {
+    int32 sidelength = 1;
+    repeated string cellvalues = 2;     // The values kept in the Board turned from a 2D array into a 1D array
+                                        // Will have either a name for a trainer/pokemon or "empty" 
+}
+
+message Location {
+    int32 x = 1;
+    int32 y = 2;
+}
+
+message Move {
+    Name name = 1;
+    Location loc = 2;
+    string action = 3;
+}
+
+message MoveList {
+    repeated Move moves = 1;
 }
