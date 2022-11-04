@@ -16,11 +16,13 @@ Also creates a default network that each container can use
 """
 def generateDockerComposeYML(numT, numP):
 
-    version='version: \'3.7\''
+    version='version: \'3.7\'\n'
     header='service:\n'
 
     with open('docker-compose.yml', 'w') as dcfile:
         # Write the necessary header information
+        dcfile.write(version)
+        dcfile.write(header)
         
         # Create the server machine
         serverLines=['\tserver:', '\t\tbuild: .', '\t\thostname: server', '\t\tcontainer_name: Server', '\t\tnetworks:', '\t\t\t - default']
