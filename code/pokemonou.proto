@@ -10,9 +10,9 @@ service PokemonOU {
     rpc Board() returns (Board) {}
 
 	// Services ran on the server for both Trainers and Pokemon
-	rpc CheckBoard(Location) returns (Location[]) {}
-    rpc Move(Action) returns (MoveStatus) {}
-    rpc ShowPath(Name) returns (Location[]) {}
+	rpc CheckBoard(Location) returns (LocationList) {}
+    rpc Move(Move) returns (Move) {}
+    rpc ShowPath(Name) returns (LocationList) {}
 
 
     // Trainer Services
@@ -58,6 +58,10 @@ message Board {
 message Location {
     int32 x = 1;
     int32 y = 2;
+}
+
+message LocationList {
+    repeated Location locs = 1;
 }
 
 message Move {
