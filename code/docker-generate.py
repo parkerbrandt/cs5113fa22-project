@@ -19,27 +19,31 @@ def generateDockerComposeYML(numT, numP):
     version='version: \'3.7\''
     header='service:\n'
 
-    dcfile=open('docker-compose.yml', 'w')
+    with open('docker-compose.yml', 'w') as dcfile:
+        # Write the necessary header information
+        
+        # Create the server machine
+        serverLines=['\tserver:', '\t\tbuild: .', '\t\thostname: server', '\t\tcontainer_name: Server', '\t\tnetworks:', '\t\t\t - default']
+        for line in serverLines:
+            dcfile.write(line + '\n')
 
-    # Create the server machine
-    serverLines=['\tserver:', '\t\tbuild: .', '\t\thostname: server', '\t\tcontainer_name: Server', '\t\tnetworks:', '\t\t\t - default']
-    dcfile.writelines(serverLines)
+        # Create a new machine for each trainer
+        for i in range(0, numT):
+            trainerLines=['\tclient' + str(i) +':', '\t\tbuild: .', '\t\thostname: trainer' + str(i), '\t\tcontainer_name: Trainer' + str(i), '\t\tnetworks:', '\t\t\t - default']
+            for line in trainerLines:
+                dcfile.write(line + '\n')
 
-    # Create a new machine for each trainer
-    for i in range(0, numT):
-        trainerLines=['\tclient' + str(i) +':', '\t\tbuild: .', '\t\thostname: trainer' + str(i), '\t\tcontainer_name: Trainer' + str(i), '\t\tnetworks:', '\t\t\t - default']
-        dcfile.writelines(trainerLines)
+        # Create a new machine for each pokemon
+        for i in range(0, numP):
+            pokemonLines=['\tclient' + str(i + numTrainers) +':', '\t\tbuild: .', '\t\thostname: pokemon' + str(i), '\t\tcontainer_name: Pokemon' + str(i), '\t\tnetworks:', '\t\t\t - default']
+            for line in pokemonLines:
+                dcfile.write(line + '\n')
 
-    # Create a new machine for each pokemon
-    for i in range(0, numP):
-        pokemonLines=['\tclient' + str(i + numTrainers - 1) +':', '\t\tbuild: .', '\t\thostname: pokemon' + str(i), '\t\tcontainer_name: Pokemon' + str(i), '\t\tnetworks:', '\t\t\t - default']
-        dcfile.writelines(pokemonLines)
+        # Add the network code at the bottom
+        networkLines=['networks:', '\tdefault:', '\t\tdriver: bridge']
+        for line in networkLines:
+            dcfile.write(line + '\n')
 
-    # Add the network code at the bottom
-    networkLines=['networks', '\tdefault:', '\t\tdriver: bridge']
-    dcfile.writelines(networkLines)
-
-    dcfile.close()
     return
 
 
