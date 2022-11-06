@@ -1,5 +1,6 @@
 version: '3.7'
-service:
+
+services:
   server:
     build: .
     hostname: server
@@ -20,26 +21,32 @@ service:
        - default
   client2:
     build: .
-    hostname: trainer2
-    container_name: Trainer2
-    networks:
-       - default
-  client3:
-    build: .
     hostname: pokemon0
     container_name: Pokemon0
     networks:
        - default
-  client4:
+  client3:
     build: .
     hostname: pokemon1
     container_name: Pokemon1
     networks:
        - default
-  client5:
+  client4:
     build: .
     hostname: pokemon2
     container_name: Pokemon2
+    networks:
+       - default
+  client5:
+    build: .
+    hostname: pokemon3
+    container_name: Pokemon3
+    networks:
+       - default
+  client6:
+    build: .
+    hostname: pokemon4
+    container_name: Pokemon4
     networks:
        - default
 networks:
