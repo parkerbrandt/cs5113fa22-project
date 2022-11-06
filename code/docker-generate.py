@@ -16,8 +16,8 @@ Also creates a default network that each container can use
 """
 def generateDockerComposeYML(numT, numP):
 
-    version='version: \'3.7\'\n'
-    header='service:\n'
+    version='version: \'3.7\'\n\n'
+    header='services:\n'
 
     with open('docker-compose.yml', 'w') as dcfile:
         # Write the necessary header information
