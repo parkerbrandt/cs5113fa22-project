@@ -32,9 +32,10 @@
 
 
 ## Emoji Chooser
-To initialize the board, I will take in an integer input of N, and using that, the server will create an array of size N x N. After this, whenever a Pokemon or Trainer is created, they will send a message to the server including their name and whether they are a trainer or pokemon. The server will then designate a spot for them on the board if it is not full by choosing two random numbers to correspond to coordinates.
+When the project runs, the first script that will run will ask the user for the size of the grid (N), the number of Pokemon (P), and the number of Trainers (T). It will then dynamically generate a docker-compose.yml file that will create the number of containers that are needed. The code will also pass along the value of N to the server, so it can create the grid.
 
-I am currently still figuring out how to fully accomplish this, but I think in the docker-compose file, I will have it create a Server, 1 Trainer, and 1 Pokemon, and then based off how many trainers and pokemon are wanted, I will look at trying to have those machines create new ones.
+
+After this script completes, it will then call the script that has the main code with logic in it, which will create 1 server, P Pokemon, and T Trainers. After each container is created, it will check in with the server, which will then designate an emoji to the machine, and a location on the grid. The server will contain a list of valid emojis to be used, and a corresponding boolean list to ensure that no emoji is used twice.
 
 
 ## Protofile Functions
