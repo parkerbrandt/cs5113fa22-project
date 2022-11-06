@@ -1,4 +1,5 @@
 # Imports
+import re
 import socket
 
 import grpc
@@ -41,10 +42,12 @@ if __name__ == '__main__':
     # Parse any command-line arguments
 
     # Determine which class the program is
-    if socket.gethostname() == 'server':
+    hostname=re.sub(r'[0-9]', '', socket.gethostname())
+
+    if hostname == 'server':
         print('Server')
-    elif socket.gethostname() == 'trainer':
+    elif hostname == 'trainer':
         print('Trainer')
-    elif socket.gethostname() == 'pokemon':
+    elif hostname == 'pokemon':
         print('Pokemon')
     
