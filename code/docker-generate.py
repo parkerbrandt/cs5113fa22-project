@@ -1,3 +1,5 @@
+import subprocess
+
 """
 Gets the input values from the user
 """
@@ -59,5 +61,5 @@ if __name__ == '__main__':
     # Create the docker-compose file based off of these parameters
     generateDockerComposeYML(numTrainers, numPokemon)
 
-    # Call the main node.py file
-    exec(open('node.py').read())
+    # Call the docker-compose command from here
+    subprocess.run(["docker compose build"])

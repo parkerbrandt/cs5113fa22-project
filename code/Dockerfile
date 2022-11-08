@@ -30,7 +30,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . /usr/src/app
 
 # Create the protobuf files
-RUN python3 -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. guessing_game.proto
+RUN python3 -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. pokemonou.proto
 
 EXPOSE 22
 EXPOSE 80
@@ -40,4 +40,4 @@ EXPOSE 50050-50100
 ENV PYTHONUNBUFFERED=1
 
 # Run the node
-CMD ["python3", "docker-generate.py"]
+CMD ["python3", "node.py"]
