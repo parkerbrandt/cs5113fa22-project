@@ -6,13 +6,13 @@ service PokemonOU {
 
     // Server Services
     rpc Captured(Name) returns (Pokemon) {}
-    rpc Moves() returns (MoveList) {}
-    rpc Board() returns (Board) {}
+    rpc Moves(Names) returns (MoveList) {}
+    rpc Get_Board(Names) returns (Board) {}
 
 	// Services ran on the server for both Trainers and Pokemon
 	rpc Initialize(Name) returns (Emoji) {}
     rpc CheckBoard(Location) returns (LocationList) {}
-    rpc Move(Move) returns (Move) {}
+    rpc Show_Move(Move) returns (Move) {}
     rpc ShowPath(Name) returns (LocationList) {}
 
 
@@ -27,6 +27,10 @@ service PokemonOU {
 message Name {
     string name = 1;
     string type = 2;            // Will either be "trainer" or "pokemon"
+}
+
+message Names {
+    repeated Names names = 1;
 }
 
 message Emoji {
@@ -51,7 +55,7 @@ message Pokemon {
 
 message Pokedex {
     string trainername = 1;         // The name of the trainer who owns these Pokemon
-    repeated string pokemonnames;   // The names of the pokemon in the pokedex
+    repeated string pokemonnames = 2;   // The names of the pokemon in the pokedex
 }
 
 message Board {
