@@ -10,7 +10,7 @@ service PokemonOU {
     rpc Get_Board(Names) returns (Board) {}
 
 	// Services ran on the server for both Trainers and Pokemon
-	rpc Initialize(Name) returns (Emoji) {}
+	rpc Initialize(Name) returns (ClientInfo) {}
     rpc CheckBoard(Location) returns (LocationList) {}
     rpc Show_Move(Move) returns (Move) {}
     rpc ShowPath(Name) returns (LocationList) {}
@@ -33,8 +33,10 @@ message Names {
     repeated Names names = 1;
 }
 
-message Emoji {
+message ClientInfo {
     int32 emojiID = 1;
+    int32 xLocation = 2;
+    int32 yLocation = 3;
 }
 
 message Trainer {
