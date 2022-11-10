@@ -5,6 +5,7 @@ import logging
 import random
 import re
 import socket
+import sys
 import time
 
 import grpc
@@ -22,9 +23,10 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     game_board = []
     clients = []
     people_emojis = []          # https://emojipedia.org/people/
-    isused_people_emojis = []
+    used_people_emojis = []     # A boolean array corresponding if each person emoji is used or not
+    
     animal_emojis = []          # https://emojipedia.org/nature/
-    isused_animal_emojis = []
+    used_animal_emojis = []     # A boolean array corresponding if each animal emoji is used or not
 
     def __init__(self):
         # Initialize people and animal emoji lists
@@ -120,7 +122,7 @@ Handles input from both Trainers and Pokemon clients, and manages the grid
 class Server:
 
     # Handles input and output from the Trainer & Pokemon clients
-    def serve(self, gridsize):
+    def serve(self, boardsize):
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         game = PokemonOUGame()
         pokemonou_pb2_grpc.add_PokemonOUServicer_to_server(game, server)
@@ -130,8 +132,6 @@ class Server:
         print('Server started')
         try:
             while True:
-                if game.is_done:
-                    server.stop(0)
                 time.sleep(1)
         except KeyboardInterrupt:
             server.stop(0)
@@ -144,11 +144,13 @@ class Server:
 The Pokemon Class
 """
 class Pokemon:
+    my_name = ''
     icon = 0
     x_loc = 0
     y_loc = 0
 
-    def __init__(self):
+    def __init__(self, name):
+        self.my_name=name
         return
 
     def run(self):
@@ -156,7 +158,8 @@ class Pokemon:
             stub = pokemonou_pb2_grpc.GuessingGameStub(channel)
 
             # Initialize this Pokemon with the server, and get an emoji designation
-            self.icon = stub.Initialize()
+            response = stub.Initialize(pokemonou_pb2.Name(name=self.my_name, type='pokemon'))
+            icon = response.emojiID
 
         return
 
@@ -165,11 +168,12 @@ class Pokemon:
 The Trainer Class
 """
 class Trainer:
+    my_name=''
     icon = 0
     x_loc = 0
     y_loc = 0
 
-    def __init__(self):
+    def __init__(self, name):
         # Check in with the server, and receive an emoji designation
 
         return
@@ -190,13 +194,14 @@ if __name__ == '__main__':
     # Begin logging
     logging.basicConfig()
 
-    # TODO: Parse cla that has board size
+    # Parse command-line arguments for size of board
+    boardsz = int(sys.argv[1])
 
     # Determine which class the program is
-    hostname=re.sub(r'[0-9]', '', socket.gethostname())
+    hostname = re.sub(r'[0-9]', '', socket.gethostname())
 
     if hostname == 'server':
-        server = Server()
+        server = Server(boardsize=boardsz)
         server.serve()
     elif hostname == 'trainer':
         trainer = Trainer()
