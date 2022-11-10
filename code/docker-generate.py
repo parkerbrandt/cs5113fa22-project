@@ -1,3 +1,4 @@
+import io
 import subprocess
 
 """
@@ -52,6 +53,20 @@ def generateDockerComposeYML(numT, numP):
 
 
 """
+Adds the command-line argument for the size of the board to the Dockerfile
+"""
+def modifyDockerfile(boardsize):
+    
+    # Rewrite the last line to add the command-line argument
+    lines = open('Dockerfile', 'r').readlines()
+    lines[len(lines) - 1] = 'CMD [\"python3\", \"node.py\", \"' + str(boardsize) + '\"]'
+    with open('Dockerfile', 'w') as file:
+        file.writelines(lines)
+
+    return
+
+
+"""
 Start of Program Logic
 """
 if __name__ == '__main__':
@@ -60,6 +75,9 @@ if __name__ == '__main__':
 
     # Create the docker-compose file based off of these parameters
     generateDockerComposeYML(numTrainers, numPokemon)
+
+    # Add board size argument in Dockerfile
+    modifyDockerfile(gridsize)
 
     # Call the docker-compose command from here
     subprocess.run(["docker compose build"])
