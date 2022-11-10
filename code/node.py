@@ -19,25 +19,50 @@ The class that implements the functions defined in the pokemonou.proto file
 Most functions will be used for communicating between clients and server
 """
 class PokemonOUGame(pokemonOU_pb2_grpc.PokemonOUServicer):
-    people_emojis = []      # https://emojipedia.org/people/
-    animal_emojis = []      # https://emojipedia.org/nature/
     
+    clients = []
+    people_emojis = []      # https://emojipedia.org/people/
+    isused_people_emojis = []
+
+    animal_emojis = []      # https://emojipedia.org/nature/
+    isused_animal_emojis = []
+
     def __init__(self):
         # Initialize people and animal emoji lists
+        
 
         return
 
     """
     Trainer & Pokemon Functions
     """
-    def designate_emoji(self, client_type):
+
+    # Called by a client whenever they are first built
+    # Will register the client with the server and designate a random emoji to the client based on their type
+    def Initialize(self, client_type):
         emoji = 0
         if client_type == "trainer":
             # Choose a random emoji from the people emoji list
-            emoji = self.people_emojis[random.randint(0, len(self.people_emojis) - 1)]
+            emoji_idx = random.randint(0, len(self.people_emojis) - 1)
+            
+            # Check that the emoji hasn't been used yet
+            while self.isused_people_emoji[emoji_idx] is True:
+                emoji_idx = random.randint(0, len(self.people_emojis) - 1)
+            
+            self.isused_people_emojis[emoji_idx] = True
+            emoji = self.people_emojis[emoji_idx]
+
         elif client_type == "pokemon":
             # Choose a random emoji from the animal emoji list
-            emoji = self.animal_emojis[random.randint(0, len(self.animal_emojis) - 1)]
+            emoji_idx = random.randint(0, len(self.animal_emojis) - 1)
+            
+            # Check that the emoji hasn't been used yet
+            while self.isused_animal_emoji[emoji_idx] is True:
+                emoji_idx = random.randint(0, len(self.animal_emojis) - 1)
+            
+            self.isused_animal_emojis[emoji_idx] = True
+            emoji = self.animal_emojis[emoji_idx]
+
         else:
             # Return -1 to denote an invalid input
             emoji = -1
