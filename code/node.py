@@ -20,15 +20,18 @@ The class that implements the functions defined in the pokemonou.proto file
 Most functions will be used for communicating between clients and server
 """
 class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
+    board_size = 0
     game_board = []
-    clients = []
+    trainers = []
+    pokemon = []
+
     people_emojis = []          # https://emojipedia.org/people/
     used_people_emojis = []     # A boolean array corresponding if each person emoji is used or not
     
     animal_emojis = []          # https://emojipedia.org/nature/
     used_animal_emojis = []     # A boolean array corresponding if each animal emoji is used or not
 
-    def __init__(self):
+    def __init__(self, board_sz):        
         # Initialize people and animal emoji lists
         
 
@@ -43,7 +46,13 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     def Moves(self, request, context):
         return pokemonou_pb2.MoveList()
 
+    # Prints the current board with pokemon and trainers
     def Show_Board(self, request, context):
+
+        # Print the actual board
+        for i in range(0, self.game_board.size):
+
+
         return pokemonou_pb2.Board()
 
 
@@ -53,37 +62,46 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     # Called by a client whenever they are first built
     # Will register the client with the server and designate a random emoji to the client based on their type
     def Initialize(self, request, context):
-        emoji = 0
+        emoji = -1
+        
         if request.type == "trainer":
-            # Choose a random emoji from the people emoji list
-            emoji_idx = random.randint(0, len(self.people_emojis) - 1)
-            
-            # Check that the emoji hasn't been used yet
-            while self.isused_people_emoji[emoji_idx] is True:
+            if self.trainers.count(request.name) is 0:
+                # Add the trainer to the server's list if they have not been added already
+                self.trainers.append(request.name)
+
+                # Choose a random emoji from the people emoji list
                 emoji_idx = random.randint(0, len(self.people_emojis) - 1)
-            
-            self.isused_people_emojis[emoji_idx] = True
-            emoji = self.people_emojis[emoji_idx]
+                
+                # Check that the emoji hasn't been used yet
+                while self.isused_people_emoji[emoji_idx] is True:
+                    emoji_idx = random.randint(0, len(self.people_emojis) - 1)
+                
+                self.isused_people_emojis[emoji_idx] = True
+                emoji = self.people_emojis[emoji_idx]
 
         elif request.type == "pokemon":
-            # Choose a random emoji from the animal emoji list
-            emoji_idx = random.randint(0, len(self.animal_emojis) - 1)
-            
-            # Check that the emoji hasn't been used yet
-            while self.isused_animal_emoji[emoji_idx] is True:
-                emoji_idx = random.randint(0, len(self.animal_emojis) - 1)
-            
-            self.isused_animal_emojis[emoji_idx] = True
-            emoji = self.animal_emojis[emoji_idx]
+            if self.pokemon.count(request.name) is 0:
+                # Add the pokemon to the server's list if not added
+                self.pokemon.append(request.name)
 
-        else:
-            # Return -1 to denote an invalid input
-            emoji = -1
+                # Choose a random emoji from the animal emoji list
+                emoji_idx = random.randint(0, len(self.animal_emojis) - 1)
+                
+                # Check that the emoji hasn't been used yet
+                while self.isused_animal_emoji[emoji_idx] is True:
+                    emoji_idx = random.randint(0, len(self.animal_emojis) - 1)
+                
+                self.isused_animal_emojis[emoji_idx] = True
+                emoji = self.animal_emojis[emoji_idx]
 
         # TODO: Assign location as well on an unoccupied spot on the board
         # Unoccupied spots are denoted by a 0
-        x = -1;
-        y = -1;
+        x = random.randint(0, );
+        y = random.randint(0, );
+
+        while self.game_board[x][y] != 0:
+            x = random.randint(0, );
+            y = random.randint(0, );
 
         return pokemonou_pb2.ClientInfo(emojiID=emoji, xLocation=x, yLocation=y)
 
@@ -124,12 +142,15 @@ class Server:
     # Handles input and output from the Trainer & Pokemon clients
     def serve(self, boardsize):
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-        game = PokemonOUGame()
+        game = PokemonOUGame()      # TODO: Send board and board size here
         pokemonou_pb2_grpc.add_PokemonOUServicer_to_server(game, server)
         server.add_insecure_port('[::]:50051')
         server.start()
         
         print('Server started')
+
+        # TODO: Need to initialize game board
+
         try:
             while True:
                 time.sleep(1)
@@ -146,20 +167,21 @@ The Pokemon Class
 class Pokemon:
     my_name = ''
     icon = 0
-    x_loc = 0
-    y_loc = 0
+    x_loc = -1
+    y_loc = -1
 
     def __init__(self, name):
+        # Initialize variables
         self.my_name=name
         return
 
     def run(self):
         with grpc.insecure_channel('server:50051') as channel:
-            stub = pokemonou_pb2_grpc.GuessingGameStub(channel)
+            stub = pokemonou_pb2_grpc.PokemonOUStub(channel)
 
             # Initialize this Pokemon with the server, and get an emoji designation
             response = stub.Initialize(pokemonou_pb2.Name(name=self.my_name, type='pokemon'))
-            icon = response.emojiID
+            self.icon = response.emojiID
 
         return
 
@@ -170,16 +192,23 @@ The Trainer Class
 class Trainer:
     my_name=''
     icon = 0
-    x_loc = 0
-    y_loc = 0
+    x_loc = -1
+    y_loc = -1
 
     def __init__(self, name):
-        # Check in with the server, and receive an emoji designation
-
+        # Initialize variables
+        self.my_name = name
         return
 
     # Run the gameplay loop for the trainer
     def run(self):
+        with grpc.insecure_channel('server:50051') as channel:
+            stub = pokemonou_pb2_grpc.PokemonOUStub(channel)
+
+            # Initialize this trainer with the server, and get an emoji designation
+            response = stub.Initialize(pokemonou_pb2.Name(name=self.my_name, type='trainer'))
+            self.icon = response.emojiID
+
         return
 
 
