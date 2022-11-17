@@ -41,7 +41,7 @@ message ClientInfo {
 
 message Trainer {
     string name = 1;
-    Emoji emoji = 2;    
+    string emoji = 2;    
     int32 xLocation = 3;
     int32 yLocation = 4;
 }
@@ -50,7 +50,7 @@ message Pokemon {
     string name = 1;
     string status = 2;          // The status of the Pokemon can be one of:
                                 // "free" or "captured"
-    Emoji emoji = 3;
+    string emoji = 3;
     int32 xLocation = 4;
     int32 yLocation = 5;
 }
