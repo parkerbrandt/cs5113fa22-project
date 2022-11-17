@@ -1,0 +1,7 @@
+:monkey:
+:gorilla:
+:wolf:
+:fox:
+:cat:
+:raccoon:
+:lion:
