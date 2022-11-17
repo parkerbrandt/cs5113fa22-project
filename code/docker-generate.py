@@ -80,4 +80,4 @@ if __name__ == '__main__':
     modifyDockerfile(gridsize)
 
     # Call the docker-compose command from here
-    subprocess.run(["docker compose build"])
+    subprocess.run(["docker-compose", "build"])
