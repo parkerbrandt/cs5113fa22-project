@@ -268,8 +268,8 @@ if __name__ == '__main__':
     hostname = re.sub(r'[0-9]', '', socket.gethostname())
 
     if hostname == 'server':
-        server = Server(boardsize=boardsz)
-        server.serve()
+        server = Server()
+        server.serve(boardsize=boardsz)
     elif hostname == 'trainer':
         trainer = Trainer(name=socket.gethostname())
         trainer.run()
