@@ -1,6 +1,7 @@
 # Imports
 from concurrent import futures
 
+import emoji
 import logging
 import random
 import re
@@ -32,6 +33,14 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     used_animal_emojis = []     # A boolean array corresponding if each animal emoji is used or not
 
     def __init__(self, board_sz):        
+             
+        # Initialize the board
+        # 0 indicates that each space is empty, will be changed whenever a trainer or pokemon connects
+        self.board_size = board_sz
+        for i in range(0, self.board_size):
+            for j in range(0, self.board_size):
+                self.game_board[i][j] = 0
+
         # Initialize people and animal emoji lists
         
 
@@ -51,7 +60,11 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
         # Print the actual board
         for i in range(0, self.game_board.size):
+            for j in range(0, self.board_size):
+                print(self.game_board[i][j])
 
+                if j == self.board_size - 1:
+                    print('\n')
 
         return pokemonou_pb2.Board()
 
@@ -96,12 +109,12 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
         # TODO: Assign location as well on an unoccupied spot on the board
         # Unoccupied spots are denoted by a 0
-        x = random.randint(0, );
-        y = random.randint(0, );
+        x = random.randint(0, self.board_size);
+        y = random.randint(0, self.board_size);
 
-        while self.game_board[x][y] != 0:
-            x = random.randint(0, );
-            y = random.randint(0, );
+        while self.game_board[x][y] == 0:
+            x = random.randint(0, self.board_size);
+            y = random.randint(0, self.board_size);
 
         return pokemonou_pb2.ClientInfo(emojiID=emoji, xLocation=x, yLocation=y)
 
@@ -142,7 +155,7 @@ class Server:
     # Handles input and output from the Trainer & Pokemon clients
     def serve(self, boardsize):
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-        game = PokemonOUGame()      # TODO: Send board and board size here
+        game = PokemonOUGame(board_sz = boardsize)
         pokemonou_pb2_grpc.add_PokemonOUServicer_to_server(game, server)
         server.add_insecure_port('[::]:50051')
         server.start()
@@ -153,6 +166,9 @@ class Server:
 
         try:
             while True:
+                # Print the game board once every second
+                game.Show_Board()
+
                 time.sleep(1)
         except KeyboardInterrupt:
             server.stop(0)
@@ -182,6 +198,8 @@ class Pokemon:
             # Initialize this Pokemon with the server, and get an emoji designation
             response = stub.Initialize(pokemonou_pb2.Name(name=self.my_name, type='pokemon'))
             self.icon = response.emojiID
+            self.x_loc = response.xLocation
+            self.y_loc = response.yLocation
 
         return
 
@@ -208,6 +226,8 @@ class Trainer:
             # Initialize this trainer with the server, and get an emoji designation
             response = stub.Initialize(pokemonou_pb2.Name(name=self.my_name, type='trainer'))
             self.icon = response.emojiID
+            self.x_loc = response.xLocation
+            self.y_loc = response.yLocation
 
         return
 
