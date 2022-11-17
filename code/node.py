@@ -75,7 +75,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         # Print the actual board
         for i in range(0, self.game_board.size):
             for j in range(0, self.board_size):
-                if self.game_board[i][j] is not ':grass:':      
+                if self.game_board[i][j] != ':grass:':      
                     print(emoji.emojize(self.game_board[i][j]))
 
                     if j == self.board_size - 1:
@@ -93,7 +93,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         emoji = 'N'
         
         if request.type == "trainer":
-            if self.trainers.count(request.name) is 0:
+            if self.trainers.count(request.name) == 0:
                 # Add the trainer to the server's list if they have not been added already
                 self.trainers.append(request.name)
 
@@ -108,7 +108,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
                 emoji = self.people_emojis[emoji_idx]
 
         elif request.type == "pokemon":
-            if self.pokemon.count(request.name) is 0:
+            if self.pokemon.count(request.name) == 0:
                 # Add the pokemon to the server's list if not added
                 self.pokemon.append(request.name)
 
