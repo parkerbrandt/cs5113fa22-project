@@ -25,6 +25,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     game_board = []
     trainers = []
     pokemon = []
+    moves = {}
 
     people_emojis = []          # https://emojipedia.org/people/
     used_people_emojis = []     # A boolean array corresponding if each person emoji is used or not
@@ -35,11 +36,11 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     def __init__(self, board_sz):        
              
         # Initialize the board
-        # 0 indicates that each space is empty, will be changed whenever a trainer or pokemon connects
+        # :grass: indicates that each space is empty, will be changed whenever a trainer or pokemon connects
         self.board_size = board_sz
         for i in range(0, self.board_size):
             for j in range(0, self.board_size):
-                self.game_board[i][j] = 0
+                self.game_board[i][j] = ':grass:'
 
         # Initialize people and animal emoji lists
         # Will read people_emoji_list.txt and animal_emoji_list.txt to get all necessary emojis
@@ -74,8 +75,8 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         # Print the actual board
         for i in range(0, self.game_board.size):
             for j in range(0, self.board_size):
-                if self.game_board[i][j] is not 'N':      
-                    print('|' + emoji.emojize(self.game_board[i][j]) + '|')
+                if self.game_board[i][j] is not ':grass:':      
+                    print(emoji.emojize(self.game_board[i][j]))
 
                     if j == self.board_size - 1:
                         print('\n')
@@ -179,8 +180,6 @@ class Server:
         
         print('Server started')
 
-        # TODO: Need to initialize game board
-
         try:
             while True:
                 # Print the game board once every second
@@ -246,6 +245,8 @@ class Trainer:
             self.x_loc = response.xLocation
             self.y_loc = response.yLocation
 
+            # Move and attempt to capture pokemon
+
         return
 
 
@@ -270,9 +271,9 @@ if __name__ == '__main__':
         server = Server(boardsize=boardsz)
         server.serve()
     elif hostname == 'trainer':
-        trainer = Trainer()
+        trainer = Trainer(name=socket.gethostname())
         trainer.run()
     elif hostname == 'pokemon':
-        pokemon = Pokemon()
+        pokemon = Pokemon(name=socket.gethostname())
         pokemon.run()
     
