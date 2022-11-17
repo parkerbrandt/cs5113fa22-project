@@ -47,15 +47,15 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
             lines = p.readlines()
 
             for i in range(len(lines)):
-                self.people_emojis[i] = lines[i]
-                self.used_people_emojis[i] = False
+                self.people_emojis.append(lines[i])
+                self.used_people_emojis.append(False)
 
         with open('animal_emoji_list.txt', 'r') as a:
             lines = a.readlines()
 
             for i in range(len(lines)):
-                self.animal_emojis[i] = lines[i]
-                self.used_animal_emojis[i] = False
+                self.animal_emojis.append(lines[i])
+                self.used_animal_emojis.append(False)
 
         return
 
@@ -73,12 +73,11 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
         # Print the actual board
         for i in range(0, self.game_board.size):
-            for j in range(0, self.board_size):
-                if self.game_board[i][j] != ':grass:':      
-                    print(emoji.emojize(self.game_board[i][j]))
+            for j in range(0, self.board_size):    
+                print(emoji.emojize(self.game_board[i][j]))
 
-                    if j == self.board_size - 1:
-                        print('\n')
+                if j == self.board_size - 1:
+                    print('\n')
 
         return pokemonou_pb2.Board()
 
