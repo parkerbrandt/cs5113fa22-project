@@ -42,7 +42,20 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
                 self.game_board[i][j] = 0
 
         # Initialize people and animal emoji lists
-        
+        # Will read people_emoji_list.txt and animal_emoji_list.txt to get all necessary emojis
+        with open('people_emoji_list.txt', 'r') as p:
+            lines = p.readlines()
+
+            for i in range(0, len(lines)):
+                self.people_emojis[i] = lines[i]
+                self.used_people_emojis[i] = False
+
+        with open('animal_emoji_list.txt', 'r') as a:
+            lines = a.readlines()
+
+            for i in range(0, len(lines)):
+                self.animal_emojis[i] = lines[i]
+                self.used_animal_emojis[i] = False
 
         return
 
@@ -61,10 +74,11 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         # Print the actual board
         for i in range(0, self.game_board.size):
             for j in range(0, self.board_size):
-                print(self.game_board[i][j])
+                if self.game_board[i][j] is not 'N':      
+                    print('|' + emoji.emojize(self.game_board[i][j]) + '|')
 
-                if j == self.board_size - 1:
-                    print('\n')
+                    if j == self.board_size - 1:
+                        print('\n')
 
         return pokemonou_pb2.Board()
 
@@ -75,7 +89,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     # Called by a client whenever they are first built
     # Will register the client with the server and designate a random emoji to the client based on their type
     def Initialize(self, request, context):
-        emoji = -1
+        emoji = 'N'
         
         if request.type == "trainer":
             if self.trainers.count(request.name) is 0:
@@ -86,10 +100,10 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
                 emoji_idx = random.randint(0, len(self.people_emojis) - 1)
                 
                 # Check that the emoji hasn't been used yet
-                while self.isused_people_emoji[emoji_idx] is True:
+                while self.used_people_emoji[emoji_idx] is True:
                     emoji_idx = random.randint(0, len(self.people_emojis) - 1)
                 
-                self.isused_people_emojis[emoji_idx] = True
+                self.used_people_emojis[emoji_idx] = True
                 emoji = self.people_emojis[emoji_idx]
 
         elif request.type == "pokemon":
@@ -101,13 +115,13 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
                 emoji_idx = random.randint(0, len(self.animal_emojis) - 1)
                 
                 # Check that the emoji hasn't been used yet
-                while self.isused_animal_emoji[emoji_idx] is True:
+                while self.used_animal_emoji[emoji_idx] is True:
                     emoji_idx = random.randint(0, len(self.animal_emojis) - 1)
                 
-                self.isused_animal_emojis[emoji_idx] = True
+                self.used_animal_emojis[emoji_idx] = True
                 emoji = self.animal_emojis[emoji_idx]
 
-        # TODO: Assign location as well on an unoccupied spot on the board
+        # Assign location as well on an unoccupied spot on the board
         # Unoccupied spots are denoted by a 0
         x = random.randint(0, self.board_size);
         y = random.randint(0, self.board_size);
@@ -115,6 +129,9 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         while self.game_board[x][y] == 0:
             x = random.randint(0, self.board_size);
             y = random.randint(0, self.board_size);
+
+        # Adjust the board to have the trainer/pokemon
+        self.game_board[x][y] = emoji
 
         return pokemonou_pb2.ClientInfo(emojiID=emoji, xLocation=x, yLocation=y)
 
@@ -182,7 +199,7 @@ The Pokemon Class
 """
 class Pokemon:
     my_name = ''
-    icon = 0
+    icon = ''
     x_loc = -1
     y_loc = -1
 
@@ -209,7 +226,7 @@ The Trainer Class
 """
 class Trainer:
     my_name=''
-    icon = 0
+    icon = ''
     x_loc = -1
     y_loc = -1
 
