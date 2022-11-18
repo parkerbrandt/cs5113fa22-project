@@ -72,8 +72,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     def print_board(self):
         
         # Clear any previous boards that may exist (8 lines)
-        for i in range(8):
-            sys.stdout.write("\033[F")
+        # sys.stdout.write("\033[10F")
 
         # Print borders for the board
         for i in range(15):
