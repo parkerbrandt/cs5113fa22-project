@@ -39,7 +39,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         # :grass: indicates that each space is empty, will be changed whenever a trainer or pokemon connects
         self.board_size = board_sz
         
-        self.game_board = [[':grass:' for i in range(self.board_size)] for j in range(self.board_size)]
+        self.game_board = [[':seedling:' for i in range(self.board_size)] for j in range(self.board_size)]
 
         # Initialize people and animal emoji lists
         # Will read people_emoji_list.txt and animal_emoji_list.txt to get all necessary emojis
@@ -70,12 +70,31 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
     # Prints the current board with pokemon and trainers
     def print_board(self):
-        # Print the actual board
-        for i in range(0, self.board_size):
-            for j in range(0, self.board_size):    
-                print(emoji.emojize(self.game_board[i][j]))
+        
+        # Clear any previous boards that may exist (8 lines)
+        # for i in range(8):
+        #     sys.stdout.write("\033[F")
 
-            print('\n')
+        # Print borders for the board
+        for i in range(15):
+            print('-')
+
+        # Print the actual board
+        for i in range(self.board_size):
+            for j in range(self.board_size):    
+
+                print('|' + emoji.emojize(self.game_board[i][j]) + ' ', end='')
+
+                if j == 7:
+                    print('|', end='')
+
+            # Newline
+            print()
+
+
+        for i in range(15):
+            print('-')
+
         return
 
     # Wrapper for print_board() for clients to access
