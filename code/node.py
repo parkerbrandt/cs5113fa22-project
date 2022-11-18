@@ -75,8 +75,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
             for j in range(0, self.board_size):    
                 print(emoji.emojize(self.game_board[i][j]))
 
-                if j == self.board_size - 1:
-                    print('\n')
+            print('\n')
         return
 
     # Wrapper for print_board() for clients to access
