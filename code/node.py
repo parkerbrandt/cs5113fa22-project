@@ -75,15 +75,14 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         # sys.stdout.write("\033[10F")
 
         # Print borders for the board
-        for i in range(15):
+        for i in range(12):
             print(' -', end='')
         print()
 
         # Print the actual board
         for i in range(self.board_size):
             for j in range(self.board_size):    
-
-                print('|' + emoji.emojize(self.game_board[i][j]) + ' ', end='')
+                print('|' + emoji.emojize(self.game_board[i][j].strip()) + ' ', end='')
 
                 if j == 7:
                     print('|', end='')
@@ -92,7 +91,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
             print()
 
 
-        for i in range(15):
+        for i in range(12):
             print(' -', end='')
         print()
 
@@ -235,11 +234,8 @@ class Pokemon:
             # Initialize this Pokemon with the server, and get an emoji designation
             response = stub.Initialize(pokemonou_pb2.Name(name=self.my_name, type='pokemon'))
             self.icon = response.emojiID
-            self.x_loc = response.xLocation
-            self.y_loc = response.yLocation
-
-            # Print the board
-            stub.Show_Board()
+            self.x_loc = int(response.xLocation)
+            self.y_loc = int(response.yLocation)
 
         return
 
@@ -268,9 +264,6 @@ class Trainer:
             self.icon = response.emojiID
             self.x_loc = response.xLocation
             self.y_loc = response.yLocation
-
-            # Print the board
-
 
             # Move and attempt to capture pokemon
 
