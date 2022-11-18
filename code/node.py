@@ -69,8 +69,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         return pokemonou_pb2.MoveList()
 
     # Prints the current board with pokemon and trainers
-    def Show_Board(self, request, context):
-
+    def print_board(self):
         # Print the actual board
         for i in range(0, self.game_board.size):
             for j in range(0, self.board_size):    
@@ -78,6 +77,11 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
                 if j == self.board_size - 1:
                     print('\n')
+        return
+
+    # Wrapper for print_board() for clients to access
+    def Show_Board(self, request, context):
+        self.print_board()
 
         return pokemonou_pb2.Board()
 
@@ -180,8 +184,8 @@ class Server:
 
         try:
             while True:
-                # Print the game board once every second
-                game.Show_Board()
+                # Show the board once every second
+                game.print_board()
 
                 time.sleep(1)
         except KeyboardInterrupt:
@@ -215,6 +219,9 @@ class Pokemon:
             self.x_loc = response.xLocation
             self.y_loc = response.yLocation
 
+            # Print the board
+            stub.Show_Board()
+
         return
 
 
@@ -242,6 +249,9 @@ class Trainer:
             self.icon = response.emojiID
             self.x_loc = response.xLocation
             self.y_loc = response.yLocation
+
+            # Print the board
+
 
             # Move and attempt to capture pokemon
 

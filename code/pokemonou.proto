@@ -7,7 +7,7 @@ service PokemonOU {
     // Server Services
     rpc Captured(Name) returns (Pokemon) {}
     rpc Moves(Names) returns (MoveList) {}
-    rpc Get_Board(Names) returns (Board) {}
+    rpc Show_Board(Name) returns (Board) {}
 
 	// Services ran on the server for both Trainers and Pokemon
 	rpc Initialize(Name) returns (ClientInfo) {}
