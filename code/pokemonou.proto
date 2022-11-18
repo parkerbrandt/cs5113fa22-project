@@ -34,7 +34,7 @@ message Names {
 }
 
 message ClientInfo {
-    int32 emojiID = 1;
+    string emojiID = 1;
     int32 xLocation = 2;
     int32 yLocation = 3;
 }
