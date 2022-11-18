@@ -77,7 +77,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
         # Print borders for the board
         for i in range(15):
-            print('-')
+            print('-', end='')
 
         # Print the actual board
         for i in range(self.board_size):
@@ -93,7 +93,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
 
         for i in range(15):
-            print('-')
+            print('-', end='')
 
         return
 
