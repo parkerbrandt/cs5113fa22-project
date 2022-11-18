@@ -86,3 +86,19 @@ Lastly, are the functions that only the Pokemon will be calling
 
 
 I expect once I start fully implementing the project in Python, I will find that there are more functions I will need to add, but these are the basic ones I know I will need.
+
+
+## The In-Progress Grid
+
+![Grid Demo](media/grid.gif)
+
+
+In this GIF, you can see both the startup of the project, and the output of the grid. The project starts up when calling the file
+
+``docker-generate.py``
+
+After executing this file, it will prompt the user for the size of the grid, the number of trainers, and the number of pokemon. Based on this, it will modify the Dockerfile and docker-compose.yml, and then start up the docker containers by calling
+
+``docker-compose up``
+
+After this, it will create one server, and then the number of trainers and pokemon specified. Each trainer and pokemon will check in with the server, receive an emoji designation, and then the server will display the emojis. The server has "seedling" emojis to represent grass as the base board, then the animal and people emojis are displayed at random places on the board. Every second the server will display the board. In the future, I want the board to clear previous output, so it is not as jarring to watch.
