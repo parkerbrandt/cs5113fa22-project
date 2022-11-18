@@ -76,7 +76,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
         # Print borders for the board
         for i in range(15):
-            print('-', end='')
+            print(' -', end='')
         print()
 
         # Print the actual board
@@ -93,7 +93,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
 
         for i in range(15):
-            print('-', end='')
+            print(' -', end='')
         print()
 
         return
@@ -122,7 +122,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
                 emoji_idx = random.randint(0, len(self.people_emojis) - 1)
                 
                 # Check that the emoji hasn't been used yet
-                while self.used_people_emoji[emoji_idx] is True:
+                while self.used_people_emojis[emoji_idx] is True:
                     emoji_idx = random.randint(0, len(self.people_emojis) - 1)
                 
                 self.used_people_emojis[emoji_idx] = True
@@ -137,7 +137,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
                 emoji_idx = random.randint(0, len(self.animal_emojis) - 1)
                 
                 # Check that the emoji hasn't been used yet
-                while self.used_animal_emoji[emoji_idx] is True:
+                while self.used_animal_emojis[emoji_idx] is True:
                     emoji_idx = random.randint(0, len(self.animal_emojis) - 1)
                 
                 self.used_animal_emojis[emoji_idx] = True
