@@ -71,7 +71,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     # Prints the current board with pokemon and trainers
     def print_board(self):
         # Print the actual board
-        for i in range(0, self.game_board.size):
+        for i in range(0, self.board_size):
             for j in range(0, self.board_size):    
                 print(emoji.emojize(self.game_board[i][j]))
 
