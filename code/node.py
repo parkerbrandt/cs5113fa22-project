@@ -99,6 +99,10 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
     # Wrapper for print_board() for clients to access
     def Show_Board(self, request, context):
+        
+        # Print the action that the client just did
+        print(request.message)
+        
         self.print_board()
 
         return pokemonou_pb2.Board()
@@ -217,14 +221,13 @@ class Server:
 The Pokemon Class
 """
 class Pokemon:
-    my_name = ''
-    icon = ''
-    x_loc = -1
-    y_loc = -1
 
     def __init__(self, name):
         # Initialize variables
-        self.my_name=name
+        self.my_name = name
+        self.icon = ''
+        self.x_loc = -1
+        self.y_loc = -1
         return
 
     def run(self):
@@ -237,6 +240,11 @@ class Pokemon:
             self.x_loc = int(response.xLocation)
             self.y_loc = int(response.yLocation)
 
+            # Move around the board and avoid trainers
+            while(True):
+
+                break
+
         return
 
 
@@ -244,14 +252,13 @@ class Pokemon:
 The Trainer Class
 """
 class Trainer:
-    my_name=''
-    icon = ''
-    x_loc = -1
-    y_loc = -1
 
     def __init__(self, name):
         # Initialize variables
         self.my_name = name
+        self.icon = ''
+        self.x_loc = -1
+        self.y_loc = -1
         return
 
     # Run the gameplay loop for the trainer
@@ -266,6 +273,10 @@ class Trainer:
             self.y_loc = response.yLocation
 
             # Move and attempt to capture pokemon
+            while(True):
+
+
+                break
 
         return
 
