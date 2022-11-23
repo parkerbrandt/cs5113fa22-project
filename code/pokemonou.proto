@@ -6,23 +6,24 @@ service PokemonOU {
 
     // Server Services
     rpc Captured(Name) returns (Pokemon) {}
-    rpc Moves(Names) returns (MoveList) {}
-    rpc Show_Board(Name) returns (Board) {}
+    rpc Actions(Names) returns (ActionList) {}
+    rpc show_board(Message) returns (Board) {}
 
 	// Services ran on the server for both Trainers and Pokemon
-	rpc Initialize(Name) returns (ClientInfo) {}
+	rpc initialize_client(Name) returns (ClientInfo) {}
     rpc CheckBoard(Location) returns (LocationList) {}
-    rpc Show_Move(Move) returns (Move) {}
+    rpc move_client(Location) returns (Location) {}
     rpc ShowPath(Name) returns (LocationList) {}
 
-
     // Trainer Services
-    rpc Capture(Pokemon) returns (Pokemon) {}
+    rpc Capture(Location) returns (Pokemon) {}
     rpc ShowPokedex(Name) returns (Pokedex) {}
 
     // Pokemon Services
     rpc ShowTrainerInfo(Name) returns (Trainer) {}
 }
+
+message Empty {}
 
 message Name {
     string name = 1;
@@ -31,6 +32,10 @@ message Name {
 
 message Names {
     repeated Names names = 1;
+}
+
+message Message {
+    string description = 1;
 }
 
 message ClientInfo {
