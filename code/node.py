@@ -1,5 +1,6 @@
 # Imports
 from concurrent import futures
+from threading import Thread, Lock
 
 import emoji
 import logging
@@ -20,26 +21,28 @@ The Pokemon OU Game class
 The class that implements the functions defined in the pokemonou.proto file
 Most functions will be used for communicating between clients and server
 """
-class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
-    board_size = 0
-    game_board = []
-    trainers = []
-    pokemon = []
-    moves = {}
+class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):     
 
-    people_emojis = []          # https://emojipedia.org/people/
-    used_people_emojis = []     # A boolean array corresponding if each person emoji is used or not
-    
-    animal_emojis = []          # https://emojipedia.org/nature/
-    used_animal_emojis = []     # A boolean array corresponding if each animal emoji is used or not
-
-    def __init__(self, board_sz):        
-             
-        # Initialize the board
-        # :grass: indicates that each space is empty, will be changed whenever a trainer or pokemon connects
+    def __init__(self, board_sz):
+        # Initialize variables and the initial game_board
         self.board_size = board_sz
-        
         self.game_board = [[':seedling:' for i in range(self.board_size)] for j in range(self.board_size)]
+
+        self.trainers = []                  # TODO: Make dictionary with current locations
+        self.trainer_pokedexes = {}
+        self.trainer_paths = {}
+        self.people_emojis = []             # https://emojipedia.org/people/
+        self.used_people_emojis = []        # A boolean array corresponding if each person emoji is used or not
+
+        self.pokemon = []                   
+        self.animal_emojis = []             # https://emojipedia.org/nature/
+        self.used_animal_emojis = []        # A boolean array corresponding if each animal emoji is used or not
+
+        self.move_list = {}
+
+        self.client_status = {}
+
+        # :grass: indicates that each space is empty, will be changed whenever a trainer or pokemon connects
 
         # Initialize people and animal emoji lists
         # Will read people_emoji_list.txt and animal_emoji_list.txt to get all necessary emojis
@@ -47,6 +50,8 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
             lines = p.readlines()
 
             for i in range(len(lines)):
+                # TODO: Check for valid emoji
+
                 self.people_emojis.append(lines[i])
                 self.used_people_emojis.append(False)
 
@@ -62,10 +67,19 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     """
     Server Services
     """
+    def check_end(self):
+        # Check if all pokemon had been captured
+        return
+
     def Captured(self, request, context):
         return pokemonou_pb2.Pokemon()
 
+    # Prints out the list of actions that have occurred by every trainer/pokemon
     def Moves(self, request, context):
+
+        for k, v in self.move_list.items():
+            print()
+
         return pokemonou_pb2.MoveList()
 
     # Prints the current board with pokemon and trainers
@@ -98,11 +112,12 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         return
 
     # Wrapper for print_board() for clients to access
-    def Show_Board(self, request, context):
+    def show_board(self, request, context):
         
         # Print the action that the client just did
         print(request.message)
         
+        # Print the entire board
         self.print_board()
 
         return pokemonou_pb2.Board()
@@ -113,8 +128,10 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     """
     # Called by a client whenever they are first built
     # Will register the client with the server and designate a random emoji to the client based on their type
-    def Initialize(self, request, context):
-        emoji = 'N'
+    
+    # TODO: LOCK
+    def initialize_client(self, request, context):
+        emoji = ':drop_of_blood:'
         
         if request.type == "trainer":
             if self.trainers.count(request.name) == 0:
@@ -161,19 +178,29 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         return pokemonou_pb2.ClientInfo(emojiID=emoji, xLocation=x, yLocation=y)
 
     
+    # TODO: LOCK
     def CheckBoard(self, request, context):
         return pokemonou_pb2.LocationList()
 
+    # TODO: LOCK
     def Show_Move(self, request, context):
         return pokemonou_pb2.Move()
 
     def ShowPath(self, request, context):
         return pokemonou_pb2.LocationList()
 
+
     """
     Trainer Services
     """
+    # TODO: LOCK
     def Capture(self, request, context):
+
+        # Check if a pokemon is in the location specified
+        is_poke_there = False
+        for pokemon in self.pokemon:
+            break
+
         return pokemonou_pb2.Pokemon()
 
     def ShowPokedex(self, request, context):
@@ -185,6 +212,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     """
     def ShowTrainerInfo(self, request, context):
         return pokemonou_pb2.Trainer()
+
 
 
 """
@@ -207,7 +235,7 @@ class Server:
         try:
             while True:
                 # Show the board once every second
-                game.print_board()
+                game.print_board()                  # TODO: Remove
 
                 time.sleep(1)
         except KeyboardInterrupt:
@@ -222,9 +250,9 @@ The Pokemon Class
 """
 class Pokemon:
 
-    def __init__(self, name):
+    def __init__(self, my_name):
         # Initialize variables
-        self.my_name = name
+        self.name = my_name
         self.icon = ''
         self.x_loc = -1
         self.y_loc = -1
@@ -234,14 +262,18 @@ class Pokemon:
         with grpc.insecure_channel('server:50051') as channel:
             stub = pokemonou_pb2_grpc.PokemonOUStub(channel)
 
-            # Initialize this Pokemon with the server, and get an emoji designation
-            response = stub.Initialize(pokemonou_pb2.Name(name=self.my_name, type='pokemon'))
+            # Initialize this Pokemon with the server, and get an emoji designation and location
+            response = stub.Initialize(pokemonou_pb2.Name(name=self.name, type='pokemon'))
             self.icon = response.emojiID
             self.x_loc = int(response.xLocation)
             self.y_loc = int(response.yLocation)
 
             # Move around the board and avoid trainers
             while(True):
+                
+                # Check if captured
+                
+                # Get status from the server on if can move
 
                 break
 
@@ -253,9 +285,9 @@ The Trainer Class
 """
 class Trainer:
 
-    def __init__(self, name):
+    def __init__(self, my_name):
         # Initialize variables
-        self.my_name = name
+        self.name = my_name
         self.icon = ''
         self.x_loc = -1
         self.y_loc = -1
@@ -267,16 +299,33 @@ class Trainer:
             stub = pokemonou_pb2_grpc.PokemonOUStub(channel)
 
             # Initialize this trainer with the server, and get an emoji designation
-            response = stub.Initialize(pokemonou_pb2.Name(name=self.my_name, type='trainer'))
+            response = stub.Initialize(pokemonou_pb2.Name(name=self.name, type='trainer'))
             self.icon = response.emojiID
             self.x_loc = response.xLocation
             self.y_loc = response.yLocation
 
             # Move and attempt to capture pokemon
             while(True):
+                
+                # Check if a pokemon is in this space - if so, catch it, otherwise move
+                action_msg = ""
+                capture_res = stub.Capture(pokemonou_pb2.Location(x=self.x_loc, y=self.y_loc))
+                if capture_res.name != "failure":
+                    action_msg = "Captured " + capture_res.name + "."
+                else:
+                    # Move by checking the board, then finding suitable location
+                    check_res = stub.CheckBoard()
+                    valid_locs = []
+                    new_x = 0
+                    new_y = 0
+
+                    action_msg = "Moved to (" + str(new_x) + ", " + str(new_y) + ") from"
+
+                    move_res = stub.Move(pokemonou_pb2.Location(x=0, y=0))
 
 
-                break
+                # Wait 1 second to make the next move
+                time.sleep(1)
 
         return
 
