@@ -28,13 +28,14 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         self.board_size = board_sz
         self.game_board = [[':seedling:' for i in range(self.board_size)] for j in range(self.board_size)]
 
-        self.trainers = []                  # TODO: Make dictionary with current locations
-        self.trainer_pokedexes = {}
-        self.trainer_paths = {}
+        self.trainers = {}                  # A dictionary of trainer's names and their current location
+        self.trainer_pokedexes = {}         # A dictionary of trainer's names and their current pokemon
+        self.trainer_paths = {}             # All the locations that each trainer has visited
         self.people_emojis = []             # https://emojipedia.org/people/
         self.used_people_emojis = []        # A boolean array corresponding if each person emoji is used or not
 
-        self.pokemon = []                   
+        self.pokemon = {}                   # A dictionary of the pokemon and its current location
+        self.pokemon_paths = {}             # A dictionary of the pokemon and all of its past locations                 
         self.animal_emojis = []             # https://emojipedia.org/nature/
         self.used_animal_emojis = []        # A boolean array corresponding if each animal emoji is used or not
 
@@ -42,16 +43,12 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
         self.client_status = {}
 
-        # :grass: indicates that each space is empty, will be changed whenever a trainer or pokemon connects
-
         # Initialize people and animal emoji lists
-        # Will read people_emoji_list.txt and animal_emoji_list.txt to get all necessary emojis
+        # Will read people_emoji_list.txt and animal_emoji_list.txt to get all used emojis
         with open('people_emoji_list.txt', 'r') as p:
             lines = p.readlines()
 
             for i in range(len(lines)):
-                # TODO: Check for valid emoji
-
                 self.people_emojis.append(lines[i])
                 self.used_people_emojis.append(False)
 
@@ -131,13 +128,11 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     
     # TODO: LOCK
     def initialize_client(self, request, context):
-        emoji = ':drop_of_blood:'
+        emoji = ':skull:'
         
         if request.type == "trainer":
             if self.trainers.count(request.name) == 0:
                 # Add the trainer to the server's list if they have not been added already
-                self.trainers.append(request.name)
-
                 # Choose a random emoji from the people emoji list
                 emoji_idx = random.randint(0, len(self.people_emojis) - 1)
                 
@@ -147,6 +142,8 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
                 
                 self.used_people_emojis[emoji_idx] = True
                 emoji = self.people_emojis[emoji_idx]
+            else:
+                return pokemonou_pb2.ClientInfo(emojiID=emoji, xLocation=-1, yLocation=-1)
 
         elif request.type == "pokemon":
             if self.pokemon.count(request.name) == 0:
@@ -162,6 +159,8 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
                 
                 self.used_animal_emojis[emoji_idx] = True
                 emoji = self.animal_emojis[emoji_idx]
+            else:
+                return pokemonou_pb2.ClientInfo(emojiID=emoji, xLocation=-1, yLocation=-1)
 
         # Assign location as well on an unoccupied spot on the board
         # Unoccupied spots are denoted by a 0
@@ -174,6 +173,14 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
         # Adjust the board to have the trainer/pokemon
         self.game_board[x][y] = emoji
+
+        # Add the location to the trainer and pokemon dictionaries, and the paths dictionaries
+        if request.type == "trainer":
+            self.trainer[request.name] = (x, y)
+            self.trainer_paths[request.name] = [(x, y)]
+        elif request.type == "pokemon":
+            self.pokemon[request.name] = (x, y)
+            self.pokemon_paths[request.name] = [(x, y)]
 
         return pokemonou_pb2.ClientInfo(emojiID=emoji, xLocation=x, yLocation=y)
 
@@ -234,9 +241,6 @@ class Server:
 
         try:
             while True:
-                # Show the board once every second
-                game.print_board()                  # TODO: Remove
-
                 time.sleep(1)
         except KeyboardInterrupt:
             server.stop(0)
@@ -299,17 +303,18 @@ class Trainer:
             stub = pokemonou_pb2_grpc.PokemonOUStub(channel)
 
             # Initialize this trainer with the server, and get an emoji designation
-            response = stub.Initialize(pokemonou_pb2.Name(name=self.name, type='trainer'))
+            response = stub.initialize_client(pokemonou_pb2.Name(name=self.name, type='trainer'))
             self.icon = response.emojiID
             self.x_loc = response.xLocation
             self.y_loc = response.yLocation
 
             # Move and attempt to capture pokemon
-            while(True):
+            is_game_over = False
+            while(not is_game_over):
                 
                 # Check if a pokemon is in this space - if so, catch it, otherwise move
                 action_msg = ""
-                capture_res = stub.Capture(pokemonou_pb2.Location(x=self.x_loc, y=self.y_loc))
+                capture_res = stub.capture(pokemonou_pb2.Location(x=self.x_loc, y=self.y_loc))
                 if capture_res.name != "failure":
                     action_msg = "Captured " + capture_res.name + "."
                 else:
@@ -321,11 +326,10 @@ class Trainer:
 
                     action_msg = "Moved to (" + str(new_x) + ", " + str(new_y) + ") from"
 
-                    move_res = stub.Move(pokemonou_pb2.Location(x=0, y=0))
+                    move_res = stub.move_client(pokemonou_pb2.Location(x=0, y=0))
 
-
-                # Wait 1 second to make the next move
-                time.sleep(1)
+                # Check the status of the game
+                status_res = stub.game_status()
 
         return
 
