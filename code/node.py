@@ -64,15 +64,18 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     """
     Server Services
     """
+    def is_over(self):
+        return
+
     def check_end(self):
         # Check if all pokemon had been captured
         return
 
-    def Captured(self, request, context):
+    def captured(self, request, context):
         return pokemonou_pb2.Pokemon()
 
     # Prints out the list of actions that have occurred by every trainer/pokemon
-    def Moves(self, request, context):
+    def actions(self, request, context):
 
         for k, v in self.move_list.items():
             print()
@@ -171,7 +174,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
             x = random.randint(0, self.board_size);
             y = random.randint(0, self.board_size);
 
-        # Adjust the board to have the trainer/pokemon
+        # Adjust the board to have the trainer/pokemon's emoji
         self.game_board[x][y] = emoji
 
         # Add the location to the trainer and pokemon dictionaries, and the paths dictionaries
@@ -186,14 +189,14 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
     
     # TODO: LOCK
-    def CheckBoard(self, request, context):
+    def check_board(self, request, context):
         return pokemonou_pb2.LocationList()
 
     # TODO: LOCK
-    def Show_Move(self, request, context):
+    def move(self, request, context):
         return pokemonou_pb2.Move()
 
-    def ShowPath(self, request, context):
+    def show_path(self, request, context):
         return pokemonou_pb2.LocationList()
 
 
@@ -201,7 +204,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     Trainer Services
     """
     # TODO: LOCK
-    def Capture(self, request, context):
+    def capture(self, request, context):
 
         # Check if a pokemon is in the location specified
         is_poke_there = False
@@ -210,14 +213,14 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
         return pokemonou_pb2.Pokemon()
 
-    def ShowPokedex(self, request, context):
+    def show_pokedex(self, request, context):
         return pokemonou_pb2.Pokedex()
 
 
     """
     Pokemon Services
     """
-    def ShowTrainerInfo(self, request, context):
+    def show_trainer_info(self, request, context):
         return pokemonou_pb2.Trainer()
 
 
