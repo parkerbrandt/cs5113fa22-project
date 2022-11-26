@@ -199,8 +199,8 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
         for i in range (-1, 2):
             for j in range(-1, 2):
-                if (current_x + i) >= 0 and (current_x + i) < self.boardsz:
-                    if (current_y + j) >= 0 and (current_y + j) < self.boardsz:
+                if (current_x + i) >= 0 and (current_x + i) < self.board_size:
+                    if (current_y + j) >= 0 and (current_y + j) < self.board_size:
                         valid_locations.append(pokemonou_pb2.Location(x=current_x + i, y=current_y + j)) 
 
         return pokemonou_pb2.LocationList(locs=valid_locations)
@@ -209,16 +209,33 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     def move(self, request, context):
 
         # Check that the move is valid
+        x = request.xLocation
+        y = request.yLocation
+
+        if x < 0 or x >= self.board_size:
+            return
+        
+        if y < 0 or y >= self.board_size:
+            return
 
         # Adjust the client's location
 
+
         # Add to the path dictionaries
 
-        return pokemonou_pb2.Move()
+        return pokemonou_pb2.Location(x=request.xLocation, y=request.yLocation)
 
     def show_path(self, request, context):
 
         # Print out the requested client's path
+        if request.type == "trainer":
+            path = self.trainer_paths[request.name]
+        elif request.type == "pokemon":
+            path = self.pokemon_paths[request.name]
+
+        loc_list = []
+        for loc in path:
+            print(str(loc[0]) + ", " + str(loc[1]))
 
         return pokemonou_pb2.LocationList()
 
@@ -346,13 +363,20 @@ class Trainer:
                 else:
                     # Move by checking the board, then finding suitable location
                     check_res = stub.CheckBoard()
-                    valid_locs = []
-                    new_x = 0
-                    new_y = 0
+                    valid_locs = check_res.locs
 
-                    action_msg = "Moved to (" + str(new_x) + ", " + str(new_y) + ") from"
+                    # Randomly choose a new location
+                    # TODO: Change to some sort of logic
+                    idx = random.randint(len(valid_locs))
 
-                    move_res = stub.move_client(pokemonou_pb2.Location(x=0, y=0))
+                    new_x = (valid_locs[idx])[0]
+                    new_y = (valid_locs[idx])[1]
+
+                    move_res = stub.move(pokemonou_pb2.ClientInfo(name=self.name, emoji=self.icon, xLocation=new_x, yLocation=new_y))
+
+                    # A -1 returned for x or y will denote an invalid move
+                    if move_res.x != -1 and move_res.y != -1:
+                        action_msg = "Moved to (" + str(new_x) + ", " + str(new_y) + ") from"
 
                 # Check the status of the game
                 status_res = stub.game_status()
