@@ -6,7 +6,7 @@ service PokemonOU {
 
     // Server Services
     rpc game_status(Name) returns (GameStatus) {}
-    rpc captured(Name) returns (Pokemon) {}
+    rpc captured(Name) returns (Name) {}
     rpc actions(Names) returns (ActionList) {}
     rpc show_board(Message) returns (Board) {}
 
@@ -24,7 +24,9 @@ service PokemonOU {
     rpc show_trainer_info(Name) returns (Trainer) {}
 }
 
-message Empty {}
+message GameStatus {
+    string status = 1;
+}
 
 message Name {
     string name = 1;
@@ -33,10 +35,6 @@ message Name {
 
 message Names {
     repeated Names names = 1;
-}
-
-message GameStatus {
-    string status = 1;
 }
 
 message Message {
@@ -48,22 +46,6 @@ message ClientInfo {
     string emojiID = 2;
     int32 xLocation = 3;
     int32 yLocation = 4;
-}
-
-message Trainer {
-    string name = 1;
-    string emoji = 2;    
-    int32 xLocation = 3;
-    int32 yLocation = 4;
-}
-
-message Pokemon {
-    string name = 1;
-    string status = 2;          // The status of the Pokemon can be one of:
-                                // "free" or "captured"
-    string emoji = 3;
-    int32 xLocation = 4;
-    int32 yLocation = 5;
 }
 
 message Pokedex {
@@ -86,12 +68,12 @@ message LocationList {
     repeated Location locs = 1;
 }
 
-message Move {
+message MoveInfo {
     Name name = 1;
     Location loc = 2;
     string action = 3;
 }
 
-message MoveList {
-    repeated Move moves = 1;
+message ActionList {
+    repeated MoveInfo moves = 1;
 }
