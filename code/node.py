@@ -197,17 +197,29 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         current_x = int(request.x)
         current_y = int(request.y)
 
-        if current_x == self.board_size - 1:
-            valid_locations.append()
+        for i in range (-1, 2):
+            for j in range(-1, 2):
+                if (current_x + i) >= 0 and (current_x + i) < self.boardsz:
+                    if (current_y + j) >= 0 and (current_y + j) < self.boardsz:
+                        valid_locations.append(pokemonou_pb2.Location(x=current_x + i, y=current_y + j)) 
 
-        valid_locations = [(current_x  + 1, current_y), (current_x - 1, current_y), (current_x, current_y + 1), (current_x, current_y - 1)]
-        return pokemonou_pb2.LocationList()
+        return pokemonou_pb2.LocationList(locs=valid_locations)
 
     # TODO: LOCK
     def move(self, request, context):
+
+        # Check that the move is valid
+
+        # Adjust the client's location
+
+        # Add to the path dictionaries
+
         return pokemonou_pb2.Move()
 
     def show_path(self, request, context):
+
+        # Print out the requested client's path
+
         return pokemonou_pb2.LocationList()
 
 
