@@ -13,11 +13,11 @@ service PokemonOU {
 	// Services ran on the server for both Trainers and Pokemon
 	rpc initialize_client(Name) returns (ClientInfo) {}
     rpc check_board(Location) returns (LocationList) {}
-    rpc move_client(Location) returns (Location) {}
+    rpc move(Location) returns (Location) {}
     rpc show_path(Name) returns (LocationList) {}
 
     // Trainer Services
-    rpc capture(Location) returns (Pokemon) {}
+    rpc capture(ClientInfo) returns (Pokemon) {}
     rpc show_pokedex(Name) returns (Pokedex) {}
 
     // Pokemon Services
@@ -44,9 +44,10 @@ message Message {
 }
 
 message ClientInfo {
-    string emojiID = 1;
-    int32 xLocation = 2;
-    int32 yLocation = 3;
+    string name = 1;
+    string emojiID = 2;
+    int32 xLocation = 3;
+    int32 yLocation = 4;
 }
 
 message Trainer {

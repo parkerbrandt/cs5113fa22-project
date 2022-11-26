@@ -39,7 +39,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         self.animal_emojis = []             # https://emojipedia.org/nature/
         self.used_animal_emojis = []        # A boolean array corresponding if each animal emoji is used or not
 
-        self.move_list = {}
+        self.action_list = {}
 
         self.client_status = {}
 
@@ -77,7 +77,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     # Prints out the list of actions that have occurred by every trainer/pokemon
     def actions(self, request, context):
 
-        for k, v in self.move_list.items():
+        for k, v in self.action_list.items():
             print()
 
         return pokemonou_pb2.MoveList()
@@ -146,7 +146,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
                 self.used_people_emojis[emoji_idx] = True
                 emoji = self.people_emojis[emoji_idx]
             else:
-                return pokemonou_pb2.ClientInfo(emojiID=emoji, xLocation=-1, yLocation=-1)
+                return pokemonou_pb2.ClientInfo(name=request.name, emojiID=emoji, xLocation=-1, yLocation=-1)
 
         elif request.type == "pokemon":
             if self.pokemon.count(request.name) == 0:
@@ -163,7 +163,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
                 self.used_animal_emojis[emoji_idx] = True
                 emoji = self.animal_emojis[emoji_idx]
             else:
-                return pokemonou_pb2.ClientInfo(emojiID=emoji, xLocation=-1, yLocation=-1)
+                return pokemonou_pb2.ClientInfo(name=request.name, emojiID=emoji, xLocation=-1, yLocation=-1)
 
         # Assign location as well on an unoccupied spot on the board
         # Unoccupied spots are denoted by a 0
@@ -185,11 +185,22 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
             self.pokemon[request.name] = (x, y)
             self.pokemon_paths[request.name] = [(x, y)]
 
-        return pokemonou_pb2.ClientInfo(emojiID=emoji, xLocation=x, yLocation=y)
+        return pokemonou_pb2.ClientInfo(name=request.name, emojiID=emoji, xLocation=x, yLocation=y)
 
     
     # TODO: LOCK
     def check_board(self, request, context):
+        # Initial bare logic
+        # TODO: Check for Pokemon and go to them
+        valid_locations = []
+
+        current_x = int(request.x)
+        current_y = int(request.y)
+
+        if current_x == self.board_size - 1:
+            valid_locations.append()
+
+        valid_locations = [(current_x  + 1, current_y), (current_x - 1, current_y), (current_x, current_y + 1), (current_x, current_y - 1)]
         return pokemonou_pb2.LocationList()
 
     # TODO: LOCK
@@ -317,7 +328,7 @@ class Trainer:
                 
                 # Check if a pokemon is in this space - if so, catch it, otherwise move
                 action_msg = ""
-                capture_res = stub.capture(pokemonou_pb2.Location(x=self.x_loc, y=self.y_loc))
+                capture_res = stub.capture(pokemonou_pb2.ClientInfo(name=self.name, emoji=self.icon, xLocation=self.x_loc, yLocation=self.y_loc))
                 if capture_res.name != "failure":
                     action_msg = "Captured " + capture_res.name + "."
                 else:
