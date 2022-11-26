@@ -25,6 +25,8 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
     def __init__(self, board_sz):
         # Initialize variables and the initial game_board
+        self.status = "active"
+        
         self.board_size = board_sz
         self.game_board = [[':seedling:' for i in range(self.board_size)] for j in range(self.board_size)]
 
@@ -39,9 +41,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         self.animal_emojis = []             # https://emojipedia.org/nature/
         self.used_animal_emojis = []        # A boolean array corresponding if each animal emoji is used or not
 
-        self.action_list = {}
-
-        self.client_status = {}
+        self.action_list = []
 
         # Initialize people and animal emoji lists
         # Will read people_emoji_list.txt and animal_emoji_list.txt to get all used emojis
@@ -65,10 +65,13 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     Server Services
     """
     def is_over(self):
-        return
+        # Iterate over all pokemon and check if all are captured
 
-    def check_end(self):
-        # Check if all pokemon had been captured
+        return self.status
+
+    def game_status(self, request, context):
+        # Wrapper method for is_over() for clients to request
+
         return
 
     def captured(self, request, context):
@@ -77,8 +80,8 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     # Prints out the list of actions that have occurred by every trainer/pokemon
     def actions(self, request, context):
 
-        for k, v in self.action_list.items():
-            print()
+        for action in self.action_list:
+            print(action)
 
         return pokemonou_pb2.MoveList()
 
@@ -192,6 +195,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     def check_board(self, request, context):
         # Initial bare logic
         # TODO: Check for Pokemon and go to them
+        # TODO: Branch off for trainer and pokemon logic
         valid_locations = []
 
         current_x = int(request.x)
@@ -213,15 +217,21 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         y = request.yLocation
 
         if x < 0 or x >= self.board_size:
-            return
+            return pokemonou_pb2.Location(x=-1, y=request.yLocation)
         
         if y < 0 or y >= self.board_size:
-            return
+            return pokemonou_pb2.Location(x=request.xLocation, y=-1)
 
-        # Adjust the client's location
+        # Adjust the client's location and add to the path dictionaries
+        # Also add to the action list
+        if request.type == "trainer":
+            self.trainers[request.name] = (x, y)
+            self.trainer_paths[request.name].append((x, y))
+        elif request.type == "pokemon":
+            self.pokemon[request.name] = (x, y)
+            self.pokemon_paths[request.name].append((x, y))
 
-
-        # Add to the path dictionaries
+        self.action_list.append(request.action_msg)
 
         return pokemonou_pb2.Location(x=request.xLocation, y=request.yLocation)
 
@@ -254,6 +264,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         return pokemonou_pb2.Pokemon()
 
     def show_pokedex(self, request, context):
+        # Displays all the pokemon captured by a trainer
         return pokemonou_pb2.Pokedex()
 
 
@@ -261,6 +272,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     Pokemon Services
     """
     def show_trainer_info(self, request, context):
+        # Displays the trainer's name and information for a pokemon if they are captured
         return pokemonou_pb2.Trainer()
 
 
@@ -372,14 +384,21 @@ class Trainer:
                     new_x = (valid_locs[idx])[0]
                     new_y = (valid_locs[idx])[1]
 
-                    move_res = stub.move(pokemonou_pb2.ClientInfo(name=self.name, emoji=self.icon, xLocation=new_x, yLocation=new_y))
+                    action_msg = "Moved to (" + str(new_x) + ", " + str(new_y) + ") from (" + str(self.x_loc) + ", " + str(self.y_loc)
+                    move_res = stub.move(pokemonou_pb2.MoveInfo(name=self.name, loc=pokemonou_pb2.Location(x=new_x, y=new_y), action=action_msg))
 
                     # A -1 returned for x or y will denote an invalid move
                     if move_res.x != -1 and move_res.y != -1:
-                        action_msg = "Moved to (" + str(new_x) + ", " + str(new_y) + ") from"
+                        # Adjust x and y locations
+                        self.x_loc = move_res.x
+                        self.y_loc = move_res.y
+
+                    # Attempt a capture again
+                    capture2_res = stub.capture(pokemonou_pb2.ClientInfo(name=self.name, emoji=self.icon))
 
                 # Check the status of the game
-                status_res = stub.game_status()
+                status_res = stub.game_status(pokemonou_pb2.Name(name=self.name, type="trainer"))
+                is_game_over = stub.GameStatus == "over"
 
         return
 
