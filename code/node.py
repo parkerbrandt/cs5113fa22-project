@@ -1,6 +1,5 @@
 # Imports
 from concurrent import futures
-from threading import Thread, Lock
 
 import emoji
 import logging
@@ -8,6 +7,7 @@ import random
 import re
 import socket
 import sys
+import threading
 import time
 
 import grpc
@@ -42,6 +42,9 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         self.used_animal_emojis = []        # A boolean array corresponding if each animal emoji is used or not
 
         self.action_list = []
+
+        # Lock variables
+        self._key_lock = threading.Lock()
 
         # Initialize people and animal emoji lists
         # Will read people_emoji_list.txt and animal_emoji_list.txt to get all used emojis
@@ -196,18 +199,19 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         # Initial bare logic
         # TODO: Check for Pokemon and go to them
         # TODO: Branch off for trainer and pokemon logic
-        valid_locations = []
+        with self._key_lock:
+            valid_locations = []
 
-        current_x = int(request.x)
-        current_y = int(request.y)
+            current_x = int(request.x)
+            current_y = int(request.y)
 
-        for i in range (-1, 2):
-            for j in range(-1, 2):
-                if (current_x + i) >= 0 and (current_x + i) < self.board_size:
-                    if (current_y + j) >= 0 and (current_y + j) < self.board_size:
-                        valid_locations.append(pokemonou_pb2.Location(x=current_x + i, y=current_y + j)) 
+            for i in range (-1, 2):
+                for j in range(-1, 2):
+                    if (current_x + i) >= 0 and (current_x + i) < self.board_size:
+                        if (current_y + j) >= 0 and (current_y + j) < self.board_size:
+                            valid_locations.append(pokemonou_pb2.Location(x=current_x + i, y=current_y + j)) 
 
-        return pokemonou_pb2.LocationList(locs=valid_locations)
+            return pokemonou_pb2.LocationList(locs=valid_locations)
 
     # TODO: LOCK
     def move(self, request, context):
