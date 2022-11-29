@@ -257,11 +257,20 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     def capture(self, request, context):
 
         # Check if a pokemon is in the location specified
-        is_poke_there = False
-        for pokemon in self.pokemon:
-            break
+        x = request.xLocation
+        y = request.yLocation
 
-        return pokemonou_pb2.Pokemon()
+        for pkmn, loc in self.pokemon.items():
+            if x == loc[0] and y == loc[1]:
+                # Found the pokemon
+
+                # Adjust status
+
+                # Return the pokemon's name
+                return pokemonou_pb2.Name(name=pkmn, type="pokemon")
+
+        # Pokemon was not found - return failure to signify that
+        return pokemonou_pb2.Name(name="failure", type="pokemon")
 
     def show_pokedex(self, request, context):
         # Displays all the pokemon captured by a trainer
@@ -296,7 +305,7 @@ class Server:
 
         try:
             while True:
-                time.sleep(1)
+                time.sleep(0.5)
         except KeyboardInterrupt:
             server.stop(0)
         return
@@ -322,19 +331,22 @@ class Pokemon:
             stub = pokemonou_pb2_grpc.PokemonOUStub(channel)
 
             # Initialize this Pokemon with the server, and get an emoji designation and location
-            response = stub.Initialize(pokemonou_pb2.Name(name=self.name, type='pokemon'))
+            response = stub.initialize_client(pokemonou_pb2.Name(name=self.name, type='pokemon'))
             self.icon = response.emojiID
             self.x_loc = int(response.xLocation)
             self.y_loc = int(response.yLocation)
 
             # Move around the board and avoid trainers
-            while(True):
+            is_game_over = False
+            while(not is_game_over):
                 
                 # Check if captured
                 
                 # Get status from the server on if can move
 
-                break
+                # Check if the game is over
+                status_res = stub.game_status(pokemonou_pb2.Name(name=self.name, type="pokemon"))
+                is_game_over = status_res.status == "over"
 
         return
 
@@ -398,7 +410,7 @@ class Trainer:
 
                 # Check the status of the game
                 status_res = stub.game_status(pokemonou_pb2.Name(name=self.name, type="trainer"))
-                is_game_over = stub.GameStatus == "over"
+                is_game_over = status_res.status == "over"
 
         return
 
