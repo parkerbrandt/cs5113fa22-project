@@ -134,67 +134,65 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     """
     # Called by a client whenever they are first built
     # Will register the client with the server and designate a random emoji to the client based on their type
-    
-    # TODO: LOCK
     def initialize_client(self, request, context):
         emoji = ':skull:'
         
-        if request.type == "trainer":
-            if self.trainers.count(request.name) == 0:
-                # Add the trainer to the server's list if they have not been added already
-                # Choose a random emoji from the people emoji list
-                emoji_idx = random.randint(0, len(self.people_emojis) - 1)
-                
-                # Check that the emoji hasn't been used yet
-                while self.used_people_emojis[emoji_idx] is True:
+        with self._key_lock:
+            if request.type == "trainer":
+                if self.trainers.count(request.name) == 0:
+                    # Add the trainer to the server's list if they have not been added already
+                    # Choose a random emoji from the people emoji list
                     emoji_idx = random.randint(0, len(self.people_emojis) - 1)
-                
-                self.used_people_emojis[emoji_idx] = True
-                emoji = self.people_emojis[emoji_idx]
-            else:
-                return pokemonou_pb2.ClientInfo(name=request.name, emojiID=emoji, xLocation=-1, yLocation=-1)
+                    
+                    # Check that the emoji hasn't been used yet
+                    while self.used_people_emojis[emoji_idx] is True:
+                        emoji_idx = random.randint(0, len(self.people_emojis) - 1)
+                    
+                    self.used_people_emojis[emoji_idx] = True
+                    emoji = self.people_emojis[emoji_idx]
+                else:
+                    return pokemonou_pb2.ClientInfo(name=request.name, emojiID=emoji, xLocation=-1, yLocation=-1)
 
-        elif request.type == "pokemon":
-            if self.pokemon.count(request.name) == 0:
-                # Add the pokemon to the server's list if not added
-                self.pokemon.append(request.name)
+            elif request.type == "pokemon":
+                if self.pokemon.count(request.name) == 0:
+                    # Add the pokemon to the server's list if not added
+                    self.pokemon.append(request.name)
 
-                # Choose a random emoji from the animal emoji list
-                emoji_idx = random.randint(0, len(self.animal_emojis) - 1)
-                
-                # Check that the emoji hasn't been used yet
-                while self.used_animal_emojis[emoji_idx] is True:
+                    # Choose a random emoji from the animal emoji list
                     emoji_idx = random.randint(0, len(self.animal_emojis) - 1)
-                
-                self.used_animal_emojis[emoji_idx] = True
-                emoji = self.animal_emojis[emoji_idx]
-            else:
-                return pokemonou_pb2.ClientInfo(name=request.name, emojiID=emoji, xLocation=-1, yLocation=-1)
+                    
+                    # Check that the emoji hasn't been used yet
+                    while self.used_animal_emojis[emoji_idx] is True:
+                        emoji_idx = random.randint(0, len(self.animal_emojis) - 1)
+                    
+                    self.used_animal_emojis[emoji_idx] = True
+                    emoji = self.animal_emojis[emoji_idx]
+                else:
+                    return pokemonou_pb2.ClientInfo(name=request.name, emojiID=emoji, xLocation=-1, yLocation=-1)
 
-        # Assign location as well on an unoccupied spot on the board
-        # Unoccupied spots are denoted by a 0
-        x = random.randint(0, self.board_size);
-        y = random.randint(0, self.board_size);
-
-        while self.game_board[x][y] == 0:
+            # Assign location as well on an unoccupied spot on the board
+            # Unoccupied spots are denoted by a 0
             x = random.randint(0, self.board_size);
             y = random.randint(0, self.board_size);
 
-        # Adjust the board to have the trainer/pokemon's emoji
-        self.game_board[x][y] = emoji
+            while self.game_board[x][y] == 0:
+                x = random.randint(0, self.board_size);
+                y = random.randint(0, self.board_size);
 
-        # Add the location to the trainer and pokemon dictionaries, and the paths dictionaries
-        if request.type == "trainer":
-            self.trainer[request.name] = (x, y)
-            self.trainer_paths[request.name] = [(x, y)]
-        elif request.type == "pokemon":
-            self.pokemon[request.name] = (x, y)
-            self.pokemon_paths[request.name] = [(x, y)]
+            # Adjust the board to have the trainer/pokemon's emoji
+            self.game_board[x][y] = emoji
 
-        return pokemonou_pb2.ClientInfo(name=request.name, emojiID=emoji, xLocation=x, yLocation=y)
+            # Add the location to the trainer and pokemon dictionaries, and the paths dictionaries
+            if request.type == "trainer":
+                self.trainer[request.name] = (x, y)
+                self.trainer_paths[request.name] = [(x, y)]
+            elif request.type == "pokemon":
+                self.pokemon[request.name] = (x, y)
+                self.pokemon_paths[request.name] = [(x, y)]
 
-    
-    # TODO: LOCK
+            return pokemonou_pb2.ClientInfo(name=request.name, emojiID=emoji, xLocation=x, yLocation=y)
+
+
     def check_board(self, request, context):
         # Initial bare logic
         # TODO: Check for Pokemon and go to them
@@ -213,31 +211,32 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
             return pokemonou_pb2.LocationList(locs=valid_locations)
 
-    # TODO: LOCK
+
     def move(self, request, context):
 
-        # Check that the move is valid
-        x = request.xLocation
-        y = request.yLocation
+        with self._key_lock:
+            # Check that the move is valid
+            x = request.xLocation
+            y = request.yLocation
 
-        if x < 0 or x >= self.board_size:
-            return pokemonou_pb2.Location(x=-1, y=request.yLocation)
-        
-        if y < 0 or y >= self.board_size:
-            return pokemonou_pb2.Location(x=request.xLocation, y=-1)
+            if x < 0 or x >= self.board_size:
+                return pokemonou_pb2.Location(x=-1, y=request.yLocation)
+            
+            if y < 0 or y >= self.board_size:
+                return pokemonou_pb2.Location(x=request.xLocation, y=-1)
 
-        # Adjust the client's location and add to the path dictionaries
-        # Also add to the action list
-        if request.type == "trainer":
-            self.trainers[request.name] = (x, y)
-            self.trainer_paths[request.name].append((x, y))
-        elif request.type == "pokemon":
-            self.pokemon[request.name] = (x, y)
-            self.pokemon_paths[request.name].append((x, y))
+            # Adjust the client's location and add to the path dictionaries
+            # Also add to the action list
+            if request.type == "trainer":
+                self.trainers[request.name] = (x, y)
+                self.trainer_paths[request.name].append((x, y))
+            elif request.type == "pokemon":
+                self.pokemon[request.name] = (x, y)
+                self.pokemon_paths[request.name].append((x, y))
 
-        self.action_list.append(request.action_msg)
+            self.action_list.append(request.action_msg)
 
-        return pokemonou_pb2.Location(x=request.xLocation, y=request.yLocation)
+            return pokemonou_pb2.Location(x=request.xLocation, y=request.yLocation)
 
     def show_path(self, request, context):
 
@@ -257,24 +256,24 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     """
     Trainer Services
     """
-    # TODO: LOCK
     def capture(self, request, context):
 
-        # Check if a pokemon is in the location specified
-        x = request.xLocation
-        y = request.yLocation
+        with self._key_lock:
+            # Check if a pokemon is in the location specified
+            x = request.xLocation
+            y = request.yLocation
 
-        for pkmn, loc in self.pokemon.items():
-            if x == loc[0] and y == loc[1]:
-                # Found the pokemon
+            for pkmn, loc in self.pokemon.items():
+                if x == loc[0] and y == loc[1]:
+                    # Found the pokemon
 
-                # Adjust status
+                    # Adjust status
 
-                # Return the pokemon's name
-                return pokemonou_pb2.Name(name=pkmn, type="pokemon")
+                    # Return the pokemon's name
+                    return pokemonou_pb2.Name(name=pkmn, type="pokemon")
 
-        # Pokemon was not found - return failure to signify that
-        return pokemonou_pb2.Name(name="failure", type="pokemon")
+            # Pokemon was not found - return failure to signify that
+            return pokemonou_pb2.Name(name="failure", type="pokemon")
 
     def show_pokedex(self, request, context):
         # Displays all the pokemon captured by a trainer
