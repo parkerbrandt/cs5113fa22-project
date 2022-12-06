@@ -1,5 +1,6 @@
 import io
 import subprocess
+import sys
 
 """
 Gets the input values from the user
@@ -80,4 +81,6 @@ if __name__ == '__main__':
     modifyDockerfile(gridsize)
 
     # Call the docker-compose command from here
-    subprocess.run(["docker-compose", "up"])
+    # TODO: Add command-line arguments on whether to run or not
+    if sys.argv[-1] == "up":
+        subprocess.run(["docker-compose", "up"])
