@@ -21,6 +21,7 @@ The Pokemon OU Game class
 
 The class that implements the functions defined in the pokemonou.proto file
 Most functions will be used for communicating between clients and server
+Some functions are called only by the server machine
 """
 class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):     
 
@@ -42,7 +43,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         self.animal_emojis = []             # https://emojipedia.org/nature/
         self.used_animal_emojis = []        # A boolean array corresponding if each animal emoji is used or not
 
-        self.action_list = []
+        self.action_list = []               # A list of all the actions that have occurred in the game
 
         # Lock variables
         self._key_lock = threading.Lock()
@@ -65,28 +66,22 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
         return
 
+
     """
     Server Services
     """
-    def is_over(self):
-        # Iterate over all pokemon and check if all are captured
-
-        return self.status
-
     def game_status(self, request, context):
-        # Wrapper method for is_over() for clients to request
-        return pokemonou_pb2.GameStatus(status=self.is_over())
+        # Iterate over all pokemon and check if all are captured
+        return pokemonou_pb2.GameStatus(status=self.status)
 
     def captured(self, request, context):
-        return pokemonou_pb2.Name()
+        return pokemonou_pb2.Name(name=, type=)
 
     # Prints out the list of actions that have occurred by every trainer/pokemon
-    def actions(self, request, context):
-
+    def actions(self):
         for action in self.action_list:
             print(action)
-
-        return pokemonou_pb2.MoveList()
+        return
 
     # Prints the current board with pokemon and trainers
     def print_board(self):
@@ -120,9 +115,9 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         # Print the entire board
         self.print_board()
 
-        # Print the actions that the client have performed in their turn
+        # Print the actions that this client has performed in their turn
         for action in request.actions:
-            print(colored(action))
+            print(colored(action, 'yellow'))
 
         return pokemonou_pb2.GameStatus(status=self.status)
 
@@ -247,6 +242,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         loc_list = []
         for loc in path:
             print(str(loc[0]) + ", " + str(loc[1]))
+            loc_list.append(loc)
 
         return pokemonou_pb2.LocationList()
 
@@ -306,7 +302,12 @@ class Server:
 
         try:
             while True:
-                time.sleep(0.5)
+                # Check if game is over
+                if game.status == "over":
+                    # Print a list of all the actions once all Pokemon are captured
+                    game.actions()
+
+                time.sleep(1)
         except KeyboardInterrupt:
             server.stop(0)
         return
