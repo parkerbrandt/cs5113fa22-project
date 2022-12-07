@@ -7,7 +7,6 @@ service PokemonOU {
     // Server Services
     rpc game_status(Name) returns (GameStatus) {}
     rpc captured(Name) returns (Name) {}
-    rpc actions(Names) returns (ActionList) {}
     rpc show_board(ActionMsgs) returns (GameStatus) {}
 
 	// Services ran on the server for both Trainers and Pokemon
@@ -31,10 +30,6 @@ message GameStatus {
 message Name {
     string name = 1;
     string type = 2;            // Will either be "trainer" or "pokemon"
-}
-
-message Names {
-    repeated Names names = 1;
 }
 
 message ClientInfo {
@@ -66,8 +61,4 @@ message MoveInfo {
 message ActionMsgs {
     Name name = 1;
     repeated string actions = 2;
-}
-
-message ActionList {
-    repeated MoveInfo moves = 1;
 }
