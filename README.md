@@ -50,20 +50,20 @@ This file
 
 ### File Structure
 
-Base Level:
-    - README.md ->      This document.
-    - COLLABORATORS ->  Content used for help and information in the process of developing PokemonOU.
-
-code/:
-    - Dockerfile ->             The file that details what information must be loaded onto each machine instance.
-    - docker-compose.yml ->     The file that details each machine to be created with Docker, and its associated name.
-    - docker-generate.py ->     The Python file that modifies the docker files according to user input.
-    - node.py ->                The Python file that runs each machines' actual code and behavior.
-    - pokemonou.proto ->        The Protofile detailing gRPC message types and functions to be implemented.
-    - animal_emoji_list.txt ->  The list of valid animal emojis for Pokemon machines to use for their icon.
-    - people_emoji_list.txt ->  The list of valid people emojis for Trainer machines to use for their icon.
-    - requirements.txt ->       Any extra requirements that need to be downloaded when creating instances.
-
-media/:
-    - grid.gif ->       The GIF used for submission for milestone 3 displaying that the board was printing at the time of submission.
-    - README_old.md ->  The content found in the README previous to this version. Contains information about development schedule, protofile functions, and how emojis were chosen.
+Base Level:</br>
+    - README.md ->      This document.</br>
+    - COLLABORATORS ->  Content used for help and information in the process of developing PokemonOU.</br>
+</br>
+code/:</br>
+    - Dockerfile ->             The file that details what information must be loaded onto each machine instance.</br>
+    - docker-compose.yml ->     The file that details each machine to be created with Docker, and its associated name.</br>
+    - docker-generate.py ->     The Python file that modifies the docker files according to user input.</br>
+    - node.py ->                The Python file that runs each machines' actual code and behavior.</br>
+    - pokemonou.proto ->        The Protofile detailing gRPC message types and functions to be implemented.</br>
+    - animal_emoji_list.txt ->  The list of valid animal emojis for Pokemon machines to use for their icon.</br>
+    - people_emoji_list.txt ->  The list of valid people emojis for Trainer machines to use for their icon.</br>
+    - requirements.txt ->       Any extra requirements that need to be downloaded when creating instances.</br>
+</br>
+media/:</br>
+    - grid.gif ->       The GIF used for submission for milestone 3 displaying that the board was printing at the time of submission.</br>
+    - README_old.md ->  The content found in the README previous to this version. Contains information about development schedule, protofile functions, and how emojis were chosen.</br>
