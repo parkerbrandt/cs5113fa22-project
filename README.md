@@ -4,6 +4,8 @@
 
 ### The Project
 
+PokemonOU is a game inspired by the Pokemon franchise by Nintendo and Game Freak. Instead of having a user control a "Trainer" and run around attempting to capture Pokemon, machines are created instead to 
+
 
 ### Project Specific Parameters
 
@@ -19,12 +21,49 @@ Number of Pokemon (P) and Trainers (T)
 
 ### How to Run
 
+First, navigate within the code/ directory by doing
+
+`cd code/`
+
+Then, to run PokemonOU, the first step is to run 'docker-generate.py' by issuing the command
+
+`python docker-generate.py up`
+
+This will prompt the user for information on the size of the grid, the number of trainers to create, and the number of pokemon to create. Once this is filled out, the script will automatically rewrite and adjust 'Dockerfile' and 'docker-compose.yml' in order to meet the specified requirements the user inputted.
+
+NOTE: If 'up' is not specified int the above command, the code will not automatically run, and the script will only adjust 'Dockerfile' and 'docker-compose.yml'. If 'up' is not entered as a command-line argument, then also run.
+
+`docker-compose up`
+
 
 ### How it Works
 
 #### docker-generate.py
 
+As mentioned in the "How to Run" section, 'docker-generate.py' asks the user for the size of the game board to create, the number of trainers, and the number of pokemon to create as well. Once this is done, the script rewrites 'docker-compose.yml'
+
+
 #### node.py
+
+This file 
 
 
 ### File Structure
+
+Base Level:
+    - README.md ->      This document.
+    - COLLABORATORS ->  Content used for help and information in the process of developing PokemonOU.
+
+code/:
+    - Dockerfile ->             The file that details what information must be loaded onto each machine instance.
+    - docker-compose.yml ->     The file that details each machine to be created with Docker, and its associated name.
+    - docker-generate.py ->     The Python file that modifies the docker files according to user input.
+    - node.py ->                The Python file that runs each machines' actual code and behavior.
+    - pokemonou.proto ->        The Protofile detailing gRPC message types and functions to be implemented.
+    - animal_emoji_list.txt ->  The list of valid animal emojis for Pokemon machines to use for their icon.
+    - people_emoji_list.txt ->  The list of valid people emojis for Trainer machines to use for their icon.
+    - requirements.txt ->       Any extra requirements that need to be downloaded when creating instances.
+
+media/:
+    - grid.gif ->       The GIF used for submission for milestone 3 displaying that the board was printing at the time of submission.
+    - README_old.md ->  The content found in the README previous to this version. Contains information about development schedule, protofile functions, and how emojis were chosen.
