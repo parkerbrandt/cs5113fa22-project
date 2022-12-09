@@ -19,7 +19,7 @@ ENV GRPC_PYTHON_VERSION 1.15.0
 
 RUN apt-get install -y libprotoc-dev protobuf-compiler
 
-RUN python3 -m pip install --upgrade pip && python3 -m pip install click grpcio grpcio-tools emoji
+RUN python3 -m pip install --upgrade pip && python3 -m pip install click grpcio grpcio-tools emoji termcolor
 
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
