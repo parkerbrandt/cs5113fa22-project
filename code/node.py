@@ -75,7 +75,10 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         return pokemonou_pb2.GameStatus(status=self.status)
 
     def captured(self, request, context):
-        return pokemonou_pb2.Name(name=, type=)
+        # Check if this pokemon exists in any of the trainers pokedexes
+        for trainer, pokedex in self.trainer_pokedexes.items():
+            if request.name in pokedex:
+                return pokemonou_pb2.Name(name=trainer, type="trainer")
 
     # Prints out the list of actions that have occurred by every trainer/pokemon
     def actions(self):
@@ -143,6 +146,8 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
                     
                     self.used_people_emojis[emoji_idx] = True
                     emoji = self.people_emojis[emoji_idx]
+
+                    print(colored(f"{request.name} connected to the server."))
                 else:
                     return pokemonou_pb2.ClientInfo(name=request.name, emojiID=emoji, xLocation=-1, yLocation=-1)
 
@@ -160,17 +165,19 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
                     
                     self.used_animal_emojis[emoji_idx] = True
                     emoji = self.animal_emojis[emoji_idx]
+
+                    print(colored(f"{request.name} connected to the server."))
                 else:
                     return pokemonou_pb2.ClientInfo(name=request.name, emojiID=emoji, xLocation=-1, yLocation=-1)
 
             # Assign location as well on an unoccupied spot on the board
             # Unoccupied spots are denoted by a 0
-            x = random.randint(0, self.board_size);
-            y = random.randint(0, self.board_size);
+            x = random.randint(0, self.board_size)
+            y = random.randint(0, self.board_size)
 
             while self.game_board[x][y] == 0:
-                x = random.randint(0, self.board_size);
-                y = random.randint(0, self.board_size);
+                x = random.randint(0, self.board_size)
+                y = random.randint(0, self.board_size)
 
             # Adjust the board to have the trainer/pokemon's emoji
             self.game_board[x][y] = emoji
@@ -188,8 +195,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
     def check_board(self, request, context):
         # Initial bare logic
-        # TODO: Check for Pokemon and go to them
-        # TODO: Branch off for trainer and pokemon logic
+        # Checks all 8 spaces around the unit, and returns a list of all available spaces
         with self._key_lock:
             valid_locations = []
 
@@ -306,6 +312,11 @@ class Server:
                 if game.status == "over":
                     # Print a list of all the actions once all Pokemon are captured
                     game.actions()
+
+                    # Also print all the paths that the trainers and pokemon have taken
+
+                    # Stop the server
+                    return
 
                 time.sleep(1)
         except KeyboardInterrupt:
