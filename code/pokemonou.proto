@@ -20,7 +20,7 @@ service PokemonOU {
     rpc show_pokedex(Name) returns (Pokedex) {}
 
     // Pokemon Services
-    rpc show_trainer_info(Name) returns (Trainer) {}
+    rpc show_trainer_info(Name) returns (ClientInfo) {}
 }
 
 message GameStatus {
