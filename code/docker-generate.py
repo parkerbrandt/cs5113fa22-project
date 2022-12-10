@@ -35,13 +35,13 @@ def generateDockerComposeYML(numT, numP):
 
         # Create a new machine for each trainer
         for i in range(0, numT):
-            trainerLines=['  client' + str(i) +':', '    build: .', '    hostname: trainer' + str(i), '    container_name: Trainer' + str(i), '    networks:', '       - default']
+            trainerLines=['  client' + str(i) +':', '    build: .', '    hostname: trainer' + str(i), '    container_name: Trainer' + str(i), '    depends_on:', '       - \"server\"', '    networks:', '       - default']
             for line in trainerLines:
                 dcfile.write(line + '\n')
 
         # Create a new machine for each pokemon
         for i in range(0, numP):
-            pokemonLines=['  client' + str(i + numTrainers) +':', '    build: .', '    hostname: pokemon' + str(i), '    container_name: Pokemon' + str(i), '    networks:', '       - default']
+            pokemonLines=['  client' + str(i + numTrainers) +':', '    build: .', '    hostname: pokemon' + str(i), '    container_name: Pokemon' + str(i), '    depends_on:', '       - \"server\"', '    networks:', '       - default']
             for line in pokemonLines:
                 dcfile.write(line + '\n')
 

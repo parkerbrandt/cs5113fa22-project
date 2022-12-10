@@ -353,7 +353,6 @@ class Pokemon:
             is_game_over = False
             while(not is_game_over):
                 action_msgs = pokemonou_pb2.ActionMsgs(actions=[])
-                action_msgs.actions.append(f"{self.name} connected.")
 
                 # Check if captured
                 # If so, display trainer information
@@ -366,6 +365,8 @@ class Pokemon:
                 # Check if the game is over
                 status_res = stub.game_status(pokemonou_pb2.Name(name=self.name, type="pokemon"))
                 is_game_over = status_res.status == "over"
+
+                time.sleep(1)
 
         return
 
@@ -399,7 +400,6 @@ class Trainer:
             is_game_over = False
             while(not is_game_over):
                 action_msgs = pokemonou_pb2.ActionMsgs(actions=[])
-                action_msgs.actions.append(f"{self.name} connected.")
 
                 # Check if a pokemon is in this space - if so, catch it, otherwise move
                 capture_res = stub.capture(pokemonou_pb2.ClientInfo(name=self.name, emojiID=self.icon, xLocation=self.x_loc, yLocation=self.y_loc))
