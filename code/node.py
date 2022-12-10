@@ -169,12 +169,12 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
             # Assign location as well on an unoccupied spot on the board
             # Unoccupied spots are denoted by a 0
-            x = random.randint(0, self.board_size)
-            y = random.randint(0, self.board_size)
+            x = random.randint(0, self.board_size-1)
+            y = random.randint(0, self.board_size-1)
 
-            while self.game_board[x][y] == 0:
-                x = random.randint(0, self.board_size)
-                y = random.randint(0, self.board_size)
+            while self.game_board[x][y] == ":seedling:":
+                x = random.randint(0, self.board_size-1)
+                y = random.randint(0, self.board_size-1)
 
             # Adjust the board to have the trainer/pokemon's emoji
             self.game_board[x][y] = emoji
