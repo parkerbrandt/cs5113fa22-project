@@ -205,6 +205,9 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
                         if (current_y + j) >= 0 and (current_y + j) < self.board_size:
                             valid_locations.append(pokemonou_pb2.Location(x=current_x + i, y=current_y + j)) 
 
+            # Check for the closest client of another type
+
+
             return pokemonou_pb2.LocationList(locs=valid_locations)
 
 
@@ -349,11 +352,15 @@ class Pokemon:
             # Move around the board and avoid trainers
             is_game_over = False
             while(not is_game_over):
-                
+                action_msgs = []
+
                 # Check if captured
                 # If so, display trainer information
                 
                 # Get status from the server on if can move
+
+                # After each move, have the server print the board
+                print_res = stub.show_board(pokemonou_pb2.ActionMsgs(name=self.name, actions=action_msgs))
 
                 # Check if the game is over
                 status_res = stub.game_status(pokemonou_pb2.Name(name=self.name, type="pokemon"))
@@ -406,6 +413,10 @@ class Trainer:
                     check_res = stub.check_board(pokemonou_pb2.Location(x=self.x_loc, y=self.y_loc))
                     valid_locs = check_res.locs
 
+                    # Get the value of the closest Pokemon, and attempt to move towards that
+                    closest_mon_x = check_res.nearest.x
+                    closest_mon_y = check_res.nearest.y
+
                     # Randomly choose a new location from the valid location list
                     idx = random.randint(len(valid_locs))
 
@@ -436,6 +447,9 @@ class Trainer:
                 # Check the status of the game
                 status_res = stub.game_status(pokemonou_pb2.Name(name=self.name, type="trainer"))
                 is_game_over = status_res.status == "over"
+
+                # Wait a second to make the next move
+                time.sleep(1)
 
         return
 
