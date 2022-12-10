@@ -91,7 +91,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
         # Print borders for the board
         for i in range(12):
-            print(' -', end='')
+            print(' ', end='')
         print()
 
         # Print the actual board
@@ -99,7 +99,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
             for j in range(self.board_size):    
                 print('|' + emoji.emojize(self.game_board[i][j].strip()) + ' ', end='')
 
-                if j == 7:
+                if j == self.board_size-1:
                     print('|', end='')
 
             # Newline
@@ -107,7 +107,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
 
         for i in range(12):
-            print(' -', end='')
+            print(' ', end='')
         print()
 
         return
