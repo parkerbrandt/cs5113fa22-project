@@ -61,6 +61,5 @@ message MoveInfo {
 }
 
 message ActionMsgs {
-    Name name = 1;
     repeated string actions = 2;
 }

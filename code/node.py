@@ -172,7 +172,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
             x = random.randint(0, self.board_size-1)
             y = random.randint(0, self.board_size-1)
 
-            while self.game_board[x][y] == ":seedling:":
+            while self.game_board[x][y] != ":seedling:":
                 x = random.randint(0, self.board_size-1)
                 y = random.randint(0, self.board_size-1)
 
@@ -352,7 +352,7 @@ class Pokemon:
             # Move around the board and avoid trainers
             is_game_over = False
             while(not is_game_over):
-                action_msgs = pokemonou_pb2.ActionMsgs(name=self.name, actions=[])
+                action_msgs = pokemonou_pb2.ActionMsgs(actions=[])
                 action_msgs.actions.append(f"{self.name} connected.")
 
                 # Check if captured
@@ -398,7 +398,7 @@ class Trainer:
             # Move and attempt to capture pokemon
             is_game_over = False
             while(not is_game_over):
-                action_msgs = pokemonou_pb2.ActionMsgs(name=self.name, actions=[])
+                action_msgs = pokemonou_pb2.ActionMsgs(actions=[])
                 action_msgs.actions.append(f"{self.name} connected.")
 
                 # Check if a pokemon is in this space - if so, catch it, otherwise move
