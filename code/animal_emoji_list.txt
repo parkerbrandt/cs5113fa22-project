@@ -33,7 +33,6 @@
 :ewe:
 :goat:
 :camel:
-:two_hump_camel:
 :llama:
 :giraffe:
 :elephant:
@@ -63,7 +62,6 @@
 :rooster:
 :hatching_chick:
 :baby_chick:
-:front_facing_baby_chick:
 :bird:
 :penguin:
 :dove:
