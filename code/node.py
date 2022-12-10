@@ -352,8 +352,8 @@ class Pokemon:
             # Move around the board and avoid trainers
             is_game_over = False
             while(not is_game_over):
-                action_msgs = pokemonou_pb2.ActionMsgs(name=self.name)
-                action_msgs.actions.add(f"{self.name} connected.")
+                action_msgs = pokemonou_pb2.ActionMsgs(name=self.name, actions=[])
+                action_msgs.actions.append(f"{self.name} connected.")
 
                 # Check if captured
                 # If so, display trainer information
@@ -361,7 +361,7 @@ class Pokemon:
                 # Get status from the server on if can move
 
                 # After each move, have the server print the board
-                print_res = stub.show_board(pokemonou_pb2.ActionMsgs(name=self.name, actions=action_msgs))
+                print_res = stub.show_board(action_msgs)
 
                 # Check if the game is over
                 status_res = stub.game_status(pokemonou_pb2.Name(name=self.name, type="pokemon"))
@@ -398,8 +398,8 @@ class Trainer:
             # Move and attempt to capture pokemon
             is_game_over = False
             while(not is_game_over):
-                action_msgs = pokemonou_pb2.ActionMsgs(name=self.name)
-                action_msgs.actions.add(f"{self.name} connected.")
+                action_msgs = pokemonou_pb2.ActionMsgs(name=self.name, actions=[])
+                action_msgs.actions.append(f"{self.name} connected.")
 
                 # Check if a pokemon is in this space - if so, catch it, otherwise move
                 capture_res = stub.capture(pokemonou_pb2.ClientInfo(name=self.name, emojiID=self.icon, xLocation=self.x_loc, yLocation=self.y_loc))
@@ -408,7 +408,7 @@ class Trainer:
                 if capture_res.name != "failure":
                     # Success -- add the pokemon's name to the pokedex
                     self.pokedex.append(capture_res.name)
-                    action_msgs.append(f'{self.name} captured {capture_res.name}')
+                    action_msgs.actions.append(f'{self.name} captured {capture_res.name}')
                 else:    
                     # Failure -- did not capture a pokemon
                     # Move by checking the board, then finding suitable location
@@ -431,7 +431,7 @@ class Trainer:
                     if move_res.x != -1 and move_res.y != -1:
                         # Add this action to the action messages list
                         action_msg = "Moved to (" + str(new_x) + ", " + str(new_y) + ") from (" + str(self.x_loc) + ", " + str(self.y_loc)
-                        action_msgs.append(action_msg)
+                        action_msgs.actions.append(action_msg)
 
                         # Adjust x and y locations
                         self.x_loc = move_res.x
@@ -441,10 +441,10 @@ class Trainer:
                     capture2_res = stub.capture(pokemonou_pb2.ClientInfo(name=self.name, emoji=self.icon))
                     if capture2_res.name != "failure":
                         self.pokedex.append(capture2_res.name)
-                        action_msgs.append(f'{self.name} captured {capture2_res.name}')
+                        action_msgs.actions.append(f'{self.name} captured {capture2_res.name}')
 
                 # Ask the server to print the board at the end of every turn
-                print_res = stub.show_board(pokemonou_pb2.ActionMsgs(name=self.name, actions=action_msgs))
+                print_res = stub.show_board(action_msgs)
 
                 # Check the status of the game
                 status_res = stub.game_status(pokemonou_pb2.Name(name=self.name, type="trainer"))
