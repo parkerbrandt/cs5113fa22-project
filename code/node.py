@@ -135,7 +135,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         
         with self._key_lock:
             if request.type == "trainer":
-                if self.trainers.count(request.name) == 0:
+                if request.name not in self.trainers:
                     # Add the trainer to the server's list if they have not been added already
                     # Choose a random emoji from the people emoji list
                     emoji_idx = random.randint(0, len(self.people_emojis) - 1)
@@ -152,10 +152,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
                     return pokemonou_pb2.ClientInfo(name=request.name, emojiID=emoji, xLocation=-1, yLocation=-1)
 
             elif request.type == "pokemon":
-                if self.pokemon.count(request.name) == 0:
-                    # Add the pokemon to the server's list if not added
-                    self.pokemon.append(request.name)
-
+                if request.name not in self.pokemon:
                     # Choose a random emoji from the animal emoji list
                     emoji_idx = random.randint(0, len(self.animal_emojis) - 1)
                     
@@ -184,7 +181,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
             # Add the location to the trainer and pokemon dictionaries, and the paths dictionaries
             if request.type == "trainer":
-                self.trainer[request.name] = (x, y)
+                self.trainers[request.name] = (x, y)
                 self.trainer_paths[request.name] = [(x, y)]
             elif request.type == "pokemon":
                 self.pokemon[request.name] = (x, y)
@@ -406,7 +403,7 @@ class Trainer:
                 else:    
                     # Failure -- did not capture a pokemon
                     # Move by checking the board, then finding suitable location
-                    check_res = stub.CheckBoard()
+                    check_res = stub.check_board(pokemonou_pb2.Location(x=self.x_loc, y=self.y_loc))
                     valid_locs = check_res.locs
 
                     # Randomly choose a new location from the valid location list
@@ -464,9 +461,9 @@ if __name__ == '__main__':
         server = Server()
         server.serve(boardsize=boardsz)
     elif hostname == 'trainer':
-        trainer = Trainer(name=socket.gethostname())
+        trainer = Trainer(my_name=socket.gethostname())
         trainer.run()
     elif hostname == 'pokemon':
-        pokemon = Pokemon(name=socket.gethostname())
+        pokemon = Pokemon(my_name=socket.gethostname())
         pokemon.run()
     

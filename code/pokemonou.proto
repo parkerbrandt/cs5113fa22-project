@@ -51,6 +51,8 @@ message Location {
 
 message LocationList {
     repeated Location locs = 1;
+    Location nearest = 2;
+    string nearest_type = 3;
 }
 
 message MoveInfo {
