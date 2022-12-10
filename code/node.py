@@ -352,7 +352,8 @@ class Pokemon:
             # Move around the board and avoid trainers
             is_game_over = False
             while(not is_game_over):
-                action_msgs = []
+                action_msgs = pokemonou_pb2.ActionMsgs(name=self.name)
+                action_msgs.actions.add(f"{self.name} connected.")
 
                 # Check if captured
                 # If so, display trainer information
@@ -397,7 +398,8 @@ class Trainer:
             # Move and attempt to capture pokemon
             is_game_over = False
             while(not is_game_over):
-                action_msgs = []
+                action_msgs = pokemonou_pb2.ActionMsgs(name=self.name)
+                action_msgs.actions.add(f"{self.name} connected.")
 
                 # Check if a pokemon is in this space - if so, catch it, otherwise move
                 capture_res = stub.capture(pokemonou_pb2.ClientInfo(name=self.name, emojiID=self.icon, xLocation=self.x_loc, yLocation=self.y_loc))
@@ -418,7 +420,7 @@ class Trainer:
                     closest_mon_y = check_res.nearest.y
 
                     # Randomly choose a new location from the valid location list
-                    idx = random.randint(len(valid_locs))
+                    idx = random.randint(0, len(valid_locs))
 
                     new_x = (valid_locs[idx])[0]
                     new_y = (valid_locs[idx])[1]
