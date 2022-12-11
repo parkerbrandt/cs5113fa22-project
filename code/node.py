@@ -426,10 +426,10 @@ class Trainer:
                     # Randomly choose a new location from the valid location list
                     idx = random.randint(0, len(valid_locs))
 
-                    new_x = (valid_locs[idx])[0]
-                    new_y = (valid_locs[idx])[1]
+                    new_x = valid_locs[idx].x
+                    new_y = valid_locs[idx].y
 
-                    move_res = stub.move(pokemonou_pb2.MoveInfo(name=self.name, emojiID=self.icon, oldloc=pokemonou_pb2.Location(x=self.x_loc, y=self.y_loc), newloc=pokemonou_pb2.Location(x=new_x, y=new_y)))
+                    move_res = stub.move(pokemonou_pb2.MoveInfo(name=pokemonou_pb2.Name(name=self.name, type="trainer"), emojiID=self.icon, oldloc=pokemonou_pb2.Location(x=self.x_loc, y=self.y_loc), newloc=pokemonou_pb2.Location(x=new_x, y=new_y)))
 
                     # A -1 returned for x or y will denote an invalid move
                     if move_res.x != -1 and move_res.y != -1:
