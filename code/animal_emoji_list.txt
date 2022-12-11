@@ -21,7 +21,6 @@
 :unicorn:
 :zebra:
 :deer:
-:bison:
 :cow_face:
 :ox:
 :water_buffalo:
@@ -36,7 +35,6 @@
 :llama:
 :giraffe:
 :elephant:
-:mammoth:
 :rhinoceros:
 :hippopotamus:
 :mouse_face:
@@ -46,7 +44,6 @@
 :rabbit_face:
 :rabbit:
 :chipmunk:
-:beaver:
 :hedgehog:
 :bat:
 :bear:
