@@ -11,7 +11,7 @@ service PokemonOU {
 
 	// Services ran on the server for both Trainers and Pokemon
 	rpc initialize_client(Name) returns (ClientInfo) {}
-    rpc check_board(Location) returns (LocationList) {}
+    rpc check_board(ClientInfo) returns (LocationList) {}
     rpc move(MoveInfo) returns (Location) {}
     rpc show_path(Name) returns (LocationList) {}
 

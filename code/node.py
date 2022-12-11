@@ -4,6 +4,7 @@ from termcolor import colored
 
 import emoji
 import logging
+import math
 import random
 import re
 import socket
@@ -194,19 +195,52 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         with self._key_lock:
             valid_locations = []
 
-            current_x = int(request.x)
-            current_y = int(request.y)
+            current_x = int(request.xLocation)
+            current_y = int(request.yLocation)
 
+            # Add in all spaces around the client if they are on the board (i.e. not going out of borders)
             for i in range (-1, 2):
                 for j in range(-1, 2):
                     if (current_x + i) >= 0 and (current_x + i) < self.board_size:
                         if (current_y + j) >= 0 and (current_y + j) < self.board_size:
                             valid_locations.append(pokemonou_pb2.Location(x=current_x + i, y=current_y + j)) 
 
-            # Check for the closest client of another type
+            # Eliminate valid spaces that have trainers in them
+            for location in valid_locations:
+                if self.game_board[location.x][location.y] in self.people_emojis:
+                    valid_locations.remove(location)
 
+            # Also return the location of the nearest client of opposite type
+            type = re.sub(r'[0-9]', '', request.name)
+            n_type = ""
+            n_x = -1
+            n_y = -1
 
-            return pokemonou_pb2.LocationList(locs=valid_locations)
+            if type == "trainer":
+                n_type = "pokemon"
+
+                nearest_dist = 2 * self.board_size
+
+                for pokemon, p_loc in self.pokemon.items():
+                    dist = math.sqrt((current_x - p_loc[0])**2 + (current_y - p_loc[1])**2)
+                    if dist < nearest_dist:
+                        nearest_dist = dist
+                        n_x = p_loc[0]
+                        n_y = p_loc[1]
+
+            elif type == "pokemon":
+                n_type = "trainer"
+
+                nearest_dist = 2 * self.board_size
+
+                for trainer, t_loc in self.trainers.items():
+                    dist = math.sqrt((current_x - t_loc[0])**2 + (current_y - t_loc[1])**2)
+                    if dist < nearest_dist:
+                        nearest_dist = dist
+                        n_x = t_loc[0]
+                        n_y = t_loc[1]
+
+            return pokemonou_pb2.LocationList(locs=valid_locations, nearest=pokemonou_pb2.Location(x=n_x, y=n_y), nearest_type=n_type)
 
 
     def move(self, request, context):
@@ -413,7 +447,7 @@ class Trainer:
                 else:    
                     # Failure -- did not capture a pokemon
                     # Move by checking the board, then finding suitable location
-                    check_res = stub.check_board(pokemonou_pb2.Location(x=self.x_loc, y=self.y_loc))
+                    check_res = stub.check_board(pokemonou_pb2.ClientInfo(name=self.name, emojiID=self.icon, xLocation=self.x_loc, yLocation=self.y_loc))
                     valid_locs = check_res.locs
 
                     # Get the value of the closest Pokemon, and attempt to move towards that
@@ -431,7 +465,7 @@ class Trainer:
                     # A -1 returned for x or y will denote an invalid move
                     if move_res.x != -1 and move_res.y != -1:
                         # Add this action to the action messages list
-                        action_msg = "Moved to (" + str(new_x) + ", " + str(new_y) + ") from (" + str(self.x_loc) + ", " + str(self.y_loc)
+                        action_msg = self.name + " moved to (" + str(new_x) + ", " + str(new_y) + ") from (" + str(self.x_loc) + ", " + str(self.y_loc) + ")"
                         action_msgs.actions.append(action_msg)
 
                         # Adjust x and y locations
