@@ -229,15 +229,12 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
             self.game_board[old_x][old_y] = ":seedling:"
             self.game_board[x][y] = request.emojiID
 
-            if request.type == "trainer":
-                self.trainers[request.name] = (x, y)
-                self.trainer_paths[request.name].append((x, y))
-            elif request.type == "pokemon":
-                self.pokemon[request.name] = (x, y)
-                self.pokemon_paths[request.name].append((x, y))
-
-            # Also add to the action list
-            self.action_list.append(request.action_msg)
+            if request.name.type == "trainer":
+                self.trainers[request.name.name] = (x, y)
+                self.trainer_paths[request.name.name].append((x, y))
+            elif request.name.type == "pokemon":
+                self.pokemon[request.name.name] = (x, y)
+                self.pokemon_paths[request.name.name].append((x, y))
 
             return pokemonou_pb2.Location(x=request.newloc.x, y=request.newloc.y)
 
@@ -424,7 +421,7 @@ class Trainer:
                     closest_mon_y = check_res.nearest.y
 
                     # Randomly choose a new location from the valid location list
-                    idx = random.randint(0, len(valid_locs))
+                    idx = random.randint(0, len(valid_locs)-1)
 
                     new_x = valid_locs[idx].x
                     new_y = valid_locs[idx].y
@@ -442,7 +439,7 @@ class Trainer:
                         self.y_loc = move_res.y
 
                     # Attempt a capture again in the new space after moving
-                    capture2_res = stub.capture(pokemonou_pb2.ClientInfo(name=self.name, emoji=self.icon))
+                    capture2_res = stub.capture(pokemonou_pb2.ClientInfo(name=self.name, emojiID=self.icon, xLocation=self.x_loc, yLocation=self.y_loc))
                     if capture2_res.name != "failure":
                         self.pokedex.append(capture2_res.name)
                         action_msgs.actions.append(f'{self.name} captured {capture2_res.name}')
