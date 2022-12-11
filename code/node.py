@@ -193,22 +193,8 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         # Initial bare logic
         # Checks all 8 spaces around the unit, and returns a list of all available spaces
         with self._key_lock:
-            valid_locations = []
-
             current_x = int(request.xLocation)
             current_y = int(request.yLocation)
-
-            # Add in all spaces around the client if they are on the board (i.e. not going out of borders)
-            for i in range (-1, 2):
-                for j in range(-1, 2):
-                    if (current_x + i) >= 0 and (current_x + i) < self.board_size:
-                        if (current_y + j) >= 0 and (current_y + j) < self.board_size:
-                            valid_locations.append(pokemonou_pb2.Location(x=current_x + i, y=current_y + j)) 
-
-            # Eliminate valid spaces that have trainers in them
-            for location in valid_locations:
-                if self.game_board[location.x][location.y] in self.people_emojis:
-                    valid_locations.remove(location)
 
             # Also return the location of the nearest client of opposite type
             type = re.sub(r'[0-9]', '', request.name)
@@ -240,7 +226,8 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
                         n_x = t_loc[0]
                         n_y = t_loc[1]
 
-            return pokemonou_pb2.LocationList(locs=valid_locations, nearest=pokemonou_pb2.Location(x=n_x, y=n_y), nearest_type=n_type)
+            # Return the location of the nearest opposite type
+            return pokemonou_pb2.Location(x=n_x, y=n_y)
 
 
     def move(self, request, context):
@@ -448,17 +435,24 @@ class Trainer:
                     # Failure -- did not capture a pokemon
                     # Move by checking the board, then finding suitable location
                     check_res = stub.check_board(pokemonou_pb2.ClientInfo(name=self.name, emojiID=self.icon, xLocation=self.x_loc, yLocation=self.y_loc))
-                    valid_locs = check_res.locs
 
                     # Get the value of the closest Pokemon, and attempt to move towards that
-                    closest_mon_x = check_res.nearest.x
-                    closest_mon_y = check_res.nearest.y
+                    closest_mon_x = check_res.x
+                    closest_mon_y = check_res.y
 
-                    # Randomly choose a new location from the valid location list
-                    idx = random.randint(0, len(valid_locs)-1)
-
-                    new_x = valid_locs[idx].x
-                    new_y = valid_locs[idx].y
+                    # Move towards the nearest Pokemon, as long as there is a valid pokemon
+                    new_x = -1
+                    new_y = -1
+                    if closest_mon_x != -1 and closest_mon_y != -1:
+                        if closest_mon_x < self.x_loc:
+                            new_x = self.x_loc - 1
+                        elif closest_mon_x > self.x_loc:
+                            new_x = self.x_loc + 1
+                        
+                        if closest_mon_y < self.y_loc:
+                            new_y = self.y_loc - 1
+                        elif closest_mon_y > self.y_loc:
+                            new_y = self.y_loc + 1
 
                     move_res = stub.move(pokemonou_pb2.MoveInfo(name=pokemonou_pb2.Name(name=self.name, type="trainer"), emojiID=self.icon, oldloc=pokemonou_pb2.Location(x=self.x_loc, y=self.y_loc), newloc=pokemonou_pb2.Location(x=new_x, y=new_y)))
 

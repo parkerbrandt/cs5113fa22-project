@@ -11,7 +11,7 @@ service PokemonOU {
 
 	// Services ran on the server for both Trainers and Pokemon
 	rpc initialize_client(Name) returns (ClientInfo) {}
-    rpc check_board(ClientInfo) returns (LocationList) {}
+    rpc check_board(ClientInfo) returns (Location) {}
     rpc move(MoveInfo) returns (Location) {}
     rpc show_path(Name) returns (LocationList) {}
 
@@ -51,8 +51,6 @@ message Location {
 
 message LocationList {
     repeated Location locs = 1;
-    Location nearest = 2;
-    string nearest_type = 3;
 }
 
 message MoveInfo {
