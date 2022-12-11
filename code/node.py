@@ -45,6 +45,9 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
         self.action_list = []               # A list of all the actions that have occurred in the game
 
+        self.last_output_len = 0            # The number of lines in the last output - used to clear the last board and action msgs
+
+
         # Lock variables
         self._key_lock = threading.Lock()
 
@@ -90,9 +93,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     def print_board(self):
 
         # Print borders for the board
-        for i in range(12):
-            print(' ', end='')
-        print()
+        print('\n')
 
         # Print the actual board
         for i in range(self.board_size):
@@ -105,10 +106,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
             # Newline
             print()
 
-
-        for i in range(12):
-            print(' ', end='')
-        print()
+        print('\n')
 
         return
 
@@ -215,8 +213,8 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
         with self._key_lock:
             # Check that the move is valid
-            x = request.xLocation
-            y = request.yLocation
+            x = request.newloc.x
+            y = request.newloc.y
 
             if x < 0 or x >= self.board_size:
                 return pokemonou_pb2.Location(x=-1, y=request.yLocation)
@@ -225,7 +223,12 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
                 return pokemonou_pb2.Location(x=request.xLocation, y=-1)
 
             # Adjust the client's location and add to the path dictionaries
-            # Also add to the action list
+            # Change the client's location in the board 
+            old_x = request.oldloc.x
+            old_y = request.oldloc.y
+            self.game_board[old_x][old_y] = ":seedling:"
+            self.game_board[x][y] = request.emojiID
+
             if request.type == "trainer":
                 self.trainers[request.name] = (x, y)
                 self.trainer_paths[request.name].append((x, y))
@@ -233,9 +236,10 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
                 self.pokemon[request.name] = (x, y)
                 self.pokemon_paths[request.name].append((x, y))
 
+            # Also add to the action list
             self.action_list.append(request.action_msg)
 
-            return pokemonou_pb2.Location(x=request.xLocation, y=request.yLocation)
+            return pokemonou_pb2.Location(x=request.newloc.x, y=request.newloc.y)
 
     def show_path(self, request, context):
 
@@ -425,7 +429,7 @@ class Trainer:
                     new_x = (valid_locs[idx])[0]
                     new_y = (valid_locs[idx])[1]
 
-                    move_res = stub.move(pokemonou_pb2.MoveInfo(name=self.name, loc=pokemonou_pb2.Location(x=new_x, y=new_y)))
+                    move_res = stub.move(pokemonou_pb2.MoveInfo(name=self.name, emojiID=self.icon, oldloc=pokemonou_pb2.Location(x=self.x_loc, y=self.y_loc), newloc=pokemonou_pb2.Location(x=new_x, y=new_y)))
 
                     # A -1 returned for x or y will denote an invalid move
                     if move_res.x != -1 and move_res.y != -1:

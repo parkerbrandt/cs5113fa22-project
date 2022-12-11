@@ -57,7 +57,9 @@ message LocationList {
 
 message MoveInfo {
     Name name = 1;
-    Location loc = 2;
+    string emojiID = 2;
+    Location oldloc = 3;
+    Location newloc = 4;
 }
 
 message ActionMsgs {
