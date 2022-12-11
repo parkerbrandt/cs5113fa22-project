@@ -238,10 +238,10 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
             y = request.newloc.y
 
             if x < 0 or x >= self.board_size:
-                return pokemonou_pb2.Location(x=-1, y=request.yLocation)
+                return pokemonou_pb2.Location(x=-1, y=request.newloc.y)
             
             if y < 0 or y >= self.board_size:
-                return pokemonou_pb2.Location(x=request.xLocation, y=-1)
+                return pokemonou_pb2.Location(x=request.newloc.x, y=-1)
 
             # Adjust the client's location and add to the path dictionaries
             # Change the client's location in the board 
@@ -382,7 +382,7 @@ class Pokemon:
                 # Get status from the server on if can move
 
                 # After each move, have the server print the board
-                print_res = stub.show_board(action_msgs)
+                # print_res = stub.show_board(action_msgs)
 
                 # Check if the game is over
                 status_res = stub.game_status(pokemonou_pb2.Name(name=self.name, type="pokemon"))
