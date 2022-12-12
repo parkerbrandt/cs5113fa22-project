@@ -76,6 +76,17 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     """
     def game_status(self, request, context):
         # Iterate over all pokemon and check if all are captured
+        catch_count = 0
+        for pkmn, _ in self.pokemon.items():
+            for trainer, dex in self.trainer_pokedexes.items():
+                if pkmn in dex:
+                    catch_count += 1
+
+        if catch_count == len(self.pokemon):
+            self.game_status = "over"
+        else:
+            self.game_status = "active"
+
         return pokemonou_pb2.GameStatus(status=self.status)
 
     def captured(self, request, context):
@@ -83,6 +94,9 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         for trainer, pokedex in self.trainer_pokedexes.items():
             if request.name in pokedex:
                 return pokemonou_pb2.Name(name=trainer, type="trainer")
+
+        # Return the name as "free" if it is not captured
+        return pokemonou_pb2.Name(name="free", type="")
 
     # Prints out the list of actions that have occurred by every trainer/pokemon
     def actions(self):
@@ -289,7 +303,9 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
                 if x == loc[0] and y == loc[1]:
                     # Found the pokemon
 
-                    # Adjust status
+                    # Adjust status - remove pokemon from the list
+                    self.trainer_pokedexes[request.name].append(pkmn)
+                    del self.pokemon[pkmn]
 
                     # Return the pokemon's name
                     return pokemonou_pb2.Name(name=pkmn, type="pokemon")
@@ -297,8 +313,15 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
             # Pokemon was not found - return failure to signify that
             return pokemonou_pb2.Name(name="failure", type="pokemon")
 
+
     def show_pokedex(self, request, context):
         # Displays all the pokemon captured by a trainer
+        for trainer, dex in self.trainer_pokedexes.items():
+            if request.name == trainer:
+                print(trainer + "'s pokemon:")
+                for pkmn in dex:
+                    print("\t")
+
         return pokemonou_pb2.Pokedex()
 
 
@@ -307,7 +330,11 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     """
     def show_trainer_info(self, request, context):
         # Displays the trainer's name and information for a pokemon if they are captured
-        return pokemonou_pb2.Trainer()
+        for trainer, dex in self.trainer_pokedexes.items():
+            if request.name in dex:
+                return pokemonou_pb2.Name(name=trainer, type="trainer")
+
+        return pokemonou_pb2.Name(name="failure", type="trainer")
 
 
 
@@ -336,6 +363,7 @@ class Server:
                     game.actions()
 
                     # Also print all the paths that the trainers and pokemon have taken
+                    # game.show_path()
 
                     # Stop the server
                     return
@@ -481,6 +509,8 @@ class Trainer:
 
                 # Wait a second to make the next move
                 time.sleep(1)
+
+            # Once the game is over, output the trainer's pokedex
 
         return
 
