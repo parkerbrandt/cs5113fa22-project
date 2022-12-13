@@ -113,9 +113,6 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         for i in range(self.last_output_len):
             print(LINE_UP, end=LINE_CLEAR)
 
-        # Print borders for the board
-        print('\n')
-
         # Print the actual board
         for i in range(self.board_size):
             for j in range(self.board_size):    
@@ -126,8 +123,6 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
             # Newline
             print()
-
-        print('\n')
 
         self.last_output_len = self.board_size + 3
 
