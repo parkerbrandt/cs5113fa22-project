@@ -128,17 +128,18 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     # Wrapper for print_board() for clients to access
     def show_board(self, request, context):
         
-        # Print the entire board
-        self.print_board()
+        with self._key_lock:
+            # Print the entire board
+            self.print_board()
 
-        # Print the actions that this client has performed in their turn
-        for action in request.actions:
-            print(action)
+            # Print the actions that this client has performed in their turn
+            for action in request.actions:
+                print(action)
 
-        # Add the new actions to the action list
-        self.action_list.append(request.actions)
+            # Add the new actions to the action list
+            self.action_list.append(request.actions)
 
-        return pokemonou_pb2.GameStatus(status=self.status)
+            return pokemonou_pb2.GameStatus(status=self.status)
 
 
     """
@@ -209,8 +210,8 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     def check_board(self, request, context):
         # Returns the location of the nearest opposite client
         with self._key_lock:
-            current_x = int(request.xLocation)
-            current_y = int(request.yLocation)
+            current_x = request.xLocation
+            current_y = request.yLocation
 
             # Also return the location of the nearest client of opposite type
             type = re.sub(r'[0-9]', '', request.name).lower().strip()
@@ -218,6 +219,11 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
             n_y = -1
 
             if type == "trainer":
+                
+                # Check for if there are no pokemon
+                if len(self.pokemon) == 0:
+                    return pokemonou_pb2.Location(x=current_x, y=current_y)
+                
                 nearest_dist = 1000
 
                 for pokemon, p_loc in self.pokemon.items():
@@ -228,6 +234,11 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
                         n_y = p_loc[1]
 
             elif type == "pokemon":
+
+                # Check for if there are no trainers
+                if len(self.trainers) == 0:
+                    return pokemonou_pb2.Location(x=current_x, y=current_y)
+
                 nearest_dist = 1000
 
                 for trainer, t_loc in self.trainers.items():
