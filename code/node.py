@@ -251,6 +251,18 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
             x = request.newloc.x
             y = request.newloc.y
 
+            if x < 0:
+                x = 0
+            
+            if x > self.board_size - 1:
+                x = self.board_size - 1
+
+            if y < 0:
+                y = 0
+
+            if y > self.board_size - 1:
+                y = self.board_size - 1
+
             # Adjust the client's location and add to the path dictionaries
             if request.name.type == "trainer":
                 self.trainers[request.name.name] = (x, y)
