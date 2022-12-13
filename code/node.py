@@ -107,10 +107,6 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     # Prints the current board with pokemon and trainers
     def print_board(self):
 
-        # Clear the previous board
-        for i in range(self.last_output_len):
-            sys.stdout.write("\033[2K\033[1G")
-
         # Print borders for the board
         print('\n')
 
@@ -127,8 +123,6 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
         print('\n')
 
-        self.last_output_len = self.board_size + 3
-
         return
 
     # Wrapper for print_board() for clients to access
@@ -140,8 +134,6 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         # Print the actions that this client has performed in their turn
         for action in request.actions:
             print(action)
-
-        self.last_output_len += len(request.actions)
 
         # Add the new actions to the action list
         self.action_list.append(request.actions)
