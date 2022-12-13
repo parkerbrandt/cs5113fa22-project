@@ -400,17 +400,47 @@ class Pokemon:
 
                 # Check if captured
                 # If so, display trainer information
+                captured_res = stub.captured(pokemonou_pb2.Name(name=self.name, type="pokemon"))
+                if captured_res.name != "free":
+                    # The pokemon was captured - print trainer information
+                    stub.show_trainer_info(pokemonou_pb2.Name(captured_res.name))
+
+                    # The game is now over for the pokemon
+                    return
+
+                # If not captured, then move away from the nearest trainer
+                check_res = stub.check_board(pokemonou_pb2.ClientInfo(name=self.name, emojiID=self.icon, xLocation=self.x_loc, yLocation=self.y_loc))
+                closest_trainer_x = check_res.x
+                closest_trainer_y = check_res.y
+
+                # Move in the opposite direction of the nearest trainer
+                new_x = -1
+                new_y = -1
+
+                if closest_trainer_x < self.x_loc:
+                    new_x = self.x_loc - 1
+                elif closest_trainer_x > self.x_loc:
+                    new_x = self.x_loc + 1
                 
-                # Get status from the server on if can move
+                if closest_trainer_y < self.y_loc:
+                    new_y = self.y_loc - 1
+                elif closest_trainer_y > self.y_loc:
+                    new_y = self.y_loc + 1
+
+                # Move
+                move_res = stub.move(pokemonou_pb2.MoveInfo(name=pokemonou_pb2.Name(name=self.name, type="pokemon"), emojiID=self.icon, oldloc=pokemonou_pb2.Location(x=self.x_loc, y=self.y_loc), newloc=pokemonou_pb2.Location(x=new_x, y=new_y)))
+                action_msgs.actions.append(f"{self.name} moved to ({move_res.x}, {move_res.y}) from ({self.x_loc}, {self.y_loc})")
+
+                # Adjust the pokemon's location
+                self.x_loc = move_res.x
+                self.y_loc = move_res.y
 
                 # After each move, have the server print the board
-                # print_res = stub.show_board(action_msgs)
+                print_res = stub.show_board(action_msgs)
 
                 # Check if the game is over
                 status_res = stub.game_status(pokemonou_pb2.Name(name=self.name, type="pokemon"))
                 is_game_over = status_res.status == "over"
-
-                time.sleep(1)
 
         return
 
@@ -500,9 +530,6 @@ class Trainer:
                 # Check the status of the game
                 status_res = stub.game_status(pokemonou_pb2.Name(name=self.name, type="trainer"))
                 is_game_over = status_res.status == "over"
-
-                # Wait a second to make the next move
-                time.sleep(1)
 
             # Once the game is over, output the trainer's pokedex
             pokedex_res = stub.show_pokedex(pokemonou_pb2.Name(name=self.name, type="trainer"))
