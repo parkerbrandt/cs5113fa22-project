@@ -135,6 +135,9 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         for action in request.actions:
             print(colored(action, 'yellow'))
 
+        # Add the new actions to the action list
+        self.action_list.append(request.actions)
+
         return pokemonou_pb2.GameStatus(status=self.status)
 
 
@@ -204,22 +207,18 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
 
     def check_board(self, request, context):
-        # Initial bare logic
-        # Checks all 8 spaces around the unit, and returns a list of all available spaces
+        # Returns the location of the nearest opposite client
         with self._key_lock:
             current_x = int(request.xLocation)
             current_y = int(request.yLocation)
 
             # Also return the location of the nearest client of opposite type
-            type = re.sub(r'[0-9]', '', request.name)
-            n_type = ""
+            type = re.sub(r'[0-9]', '', request.name).lower().strip()
             n_x = -1
             n_y = -1
 
             if type == "trainer":
-                n_type = "pokemon"
-
-                nearest_dist = 2 * self.board_size
+                nearest_dist = 1000
 
                 for pokemon, p_loc in self.pokemon.items():
                     dist = math.sqrt((current_x - p_loc[0])**2 + (current_y - p_loc[1])**2)
@@ -229,9 +228,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
                         n_y = p_loc[1]
 
             elif type == "pokemon":
-                n_type = "trainer"
-
-                nearest_dist = 2 * self.board_size
+                nearest_dist = 1000
 
                 for trainer, t_loc in self.trainers.items():
                     dist = math.sqrt((current_x - t_loc[0])**2 + (current_y - t_loc[1])**2)
@@ -239,6 +236,9 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
                         nearest_dist = dist
                         n_x = t_loc[0]
                         n_y = t_loc[1]
+            
+            else:
+                print("name error")
 
             # Return the location of the nearest opposite type
             return pokemonou_pb2.Location(x=n_x, y=n_y)
@@ -251,25 +251,19 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
             x = request.newloc.x
             y = request.newloc.y
 
-            if x < 0 or x >= self.board_size:
-                return pokemonou_pb2.Location(x=-1, y=request.newloc.y)
-            
-            if y < 0 or y >= self.board_size:
-                return pokemonou_pb2.Location(x=request.newloc.x, y=-1)
-
             # Adjust the client's location and add to the path dictionaries
-            # Change the client's location in the board 
-            old_x = request.oldloc.x
-            old_y = request.oldloc.y
-            self.game_board[old_x][old_y] = ":seedling:"
-            self.game_board[x][y] = request.emojiID
-
             if request.name.type == "trainer":
                 self.trainers[request.name.name] = (x, y)
                 self.trainer_paths[request.name.name].append((x, y))
             elif request.name.type == "pokemon":
                 self.pokemon[request.name.name] = (x, y)
                 self.pokemon_paths[request.name.name].append((x, y))
+
+            # Change the client's location in the board 
+            old_x = request.oldloc.x
+            old_y = request.oldloc.y
+            self.game_board[old_x][old_y] = ":seedling:"
+            self.game_board[x][y] = request.emojiID
 
             return pokemonou_pb2.Location(x=request.newloc.x, y=request.newloc.y)
 
@@ -511,6 +505,7 @@ class Trainer:
                 time.sleep(1)
 
             # Once the game is over, output the trainer's pokedex
+            pokedex_res = stub.show_pokedex(pokemonou_pb2.Name(name=self.name, type="trainer"))
 
         return
 
