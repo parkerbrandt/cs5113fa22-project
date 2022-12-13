@@ -56,11 +56,11 @@ def generateDockerComposeYML(numT, numP):
 """
 Adds the command-line argument for the size of the board to the Dockerfile
 """
-def modifyDockerfile(boardsize):
+def modifyDockerfile(boardsize, num_pkmn):
     
-    # Rewrite the last line to add the command-line argument
+    # Rewrite the last line to add the command-line arguments
     lines = open('Dockerfile', 'r').readlines()
-    lines[len(lines) - 1] = 'CMD [\"python3\", \"node.py\", \"' + str(boardsize) + '\"]'
+    lines[len(lines) - 1] = 'CMD [\"python3\", \"node.py\", \"' + str(boardsize) + '\",  \"' + str(num_pkmn) + '\"]'
     with open('Dockerfile', 'w') as file:
         file.writelines(lines)
 
@@ -78,7 +78,7 @@ if __name__ == '__main__':
     generateDockerComposeYML(numTrainers, numPokemon)
 
     # Add board size argument in Dockerfile
-    modifyDockerfile(gridsize)
+    modifyDockerfile(gridsize, numPokemon)
 
     # Call the docker-compose command from here
     # TODO: Add command-line arguments on whether to run or not
