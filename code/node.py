@@ -395,14 +395,16 @@ class Server():
                 # Check if game is over
                 over_count = 0
                 if game.status == "over":
-                    # Print only 1 time 
-                    if over_count == 0:
-                        time.sleep(3)
+                    lock = threading.Lock()
+                    with lock:
+                        # Print only 1 time 
+                        if over_count == 0:
+                            time.sleep(3)
 
-                        # Print a list of all the actions once all Pokemon are captured
-                        print("ACTIONS: ")
-                        game.actions()
-                        over_count += 1
+                            # Print a list of all the actions once all Pokemon are captured
+                            print("ACTIONS: ")
+                            game.actions()
+                            over_count += 1
                 else:
                     # Print the board every second, with the list of actions that have occurred
                     game.print_board()
