@@ -394,7 +394,11 @@ class Server():
             while True:
                 # Check if game is over
                 if game.status == "over":
+                    # Wait 3 seconds to allow Trainers to finish outputting
+                    time.sleep(3)
+
                     # Print a list of all the actions once all Pokemon are captured
+                    print("ACTIONS: ")
                     game.actions()
 
                     # Stop the server
