@@ -123,9 +123,9 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
     def game_status(self, request, context):
         # Can check if all pokemon are captured by checking if self.pokemon is empty
         if len(self.pokemon) == 0 and self.capture_counter == self.num_pkmn:
-            self.game_status = "over"
+            self.status = "over"
         else:
-            self.game_status = "active"
+            self.status = "active"
 
         return pokemonou_pb2.GameStatus(status=self.status)
 
