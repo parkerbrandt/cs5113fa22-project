@@ -1,6 +1,4 @@
-# Imports
 from concurrent import futures
-from termcolor import colored
 
 import emoji
 import logging
@@ -24,30 +22,33 @@ The class that implements the functions defined in the pokemonou.proto file
 Most functions will be used for communicating between clients and server
 Some functions are called only by the server machine
 """
-class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):     
+class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
-    def __init__(self, board_sz):
-        # Initialize variables and the initial game_board
+    def __init__(self, board_size, total_pkmn):
+
+        # Initialize variables
         self.status = "active"
-        
-        self.board_size = board_sz
-        self.game_board = [[':seedling:' for i in range(self.board_size)] for j in range(self.board_size)]
 
-        self.trainers = {}                  # A dictionary of trainer's names and their current location
-        self.trainer_pokedexes = {}         # A dictionary of trainer's names and their current pokemon
-        self.trainer_paths = {}             # All the locations that each trainer has visited
-        self.people_emojis = []             # https://emojipedia.org/people/
-        self.used_people_emojis = []        # A boolean array corresponding if each person emoji is used or not
+        self.board_size = board_size
+        self.game_board = [[":seedling:" for i in range(self.board_size)] for j in range(self.board_size)]
 
-        self.pokemon = {}                   # A dictionary of the pokemon and its current location
-        self.pokemon_paths = {}             # A dictionary of the pokemon and all of its past locations                 
-        self.animal_emojis = []             # https://emojipedia.org/nature/
-        self.used_animal_emojis = []        # A boolean array corresponding if each animal emoji is used or not
+        self.trainers = {}                  # Dict: key = trainer's name (string), value = current location ((int, int) tuple)
+        self.trainer_pokedexes = {}         # Dict: key = trainer's name (string), value = list of pokemon ([string])
+        self.trainer_paths = {}             # Dict: key = trainer's name (string), value = list of locations visited ([(int, int)])
+        self.people_emojis = []             # List of emojis for trainers to use ([string]) - https://emojipedia.org/people/ 
+        self.used_people_emojis = []        # List of booleans corresponding to people_emojis that has True if that emoji has been used
 
-        self.action_list = []               # A list of all the actions that have occurred in the game
+        self.num_pkmn = total_pkmn          # The int number of total pokemon that will be added
+                                            # Used so game cannot end prematurely before all Pokemon are added
+        self.pokemon = {}                   # Dict: key = pokemon's name (string), value = current location ((int, int) tuple)
+        self.pokemon_paths = {}             # Dict: key = pokemon's name (string), value = list of locations visited ([(int, int)])
+        self.animal_emojis = []             # List of emojis for pokemon to use ([string]) - https://emojipedia.org/nature/
+        self.used_animal_emojis = []        # List of booleans telling which animal emojis have been used
 
-        self.last_output_len = 0            # The number of lines in the last output - used to clear the last board and action msgs
+        self.action_list = []               # A list of all the actions that clients have taken in the game so far
+        self.current_actions = []           # A list of the current actions that have not been output yet
 
+        self.last_output_len = 0
 
         # Lock variables
         self._key_lock = threading.Lock()
@@ -72,42 +73,19 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
 
     """
-    Server Services
+    Server Functions
     """
-    def game_status(self, request, context):
-        # Iterate over all pokemon and check if all are captured
-        catch_count = 0
-        for pkmn, _ in self.pokemon.items():
-            for trainer, dex in self.trainer_pokedexes.items():
-                if pkmn in dex:
-                    catch_count += 1
 
-        if catch_count == len(self.pokemon):
-            self.game_status = "over"
-        else:
-            self.game_status = "active"
-
-        return pokemonou_pb2.GameStatus(status=self.status)
-
-    def captured(self, request, context):
-        # Check if this pokemon exists in any of the trainers pokedexes
-        for trainer, pokedex in self.trainer_pokedexes.items():
-            if request.name in pokedex:
-                return pokemonou_pb2.Name(name=trainer, type="trainer")
-
-        # Return the name as "free" if it is not captured
-        return pokemonou_pb2.Name(name="free", type="")
-
-    # Prints out the list of actions that have occurred by every trainer/pokemon
+    # Prints all of the actions that every client has taken so far
     def actions(self):
         for action in self.action_list:
             print(action)
         return
 
-    # Prints the current board with pokemon and trainers
+    # Prints the current state of the board, and all the actions that have been taken in this turn
     def print_board(self):
 
-        # Clear the previous board
+        # Clear the screen
         LINE_UP = '\033[1A'
         LINE_CLEAR = '\x1b[2K'
         for i in range(self.last_output_len):
@@ -124,239 +102,279 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
             # Newline
             print()
 
-        self.last_output_len = self.board_size + 3
+        # Print all of the action messages for this turn
+        for msg in self.current_actions:
+            print(msg)
+
+        self.last_output_len = self.board_size + 4 * len(self.current_actions) + 3
+
+        self.current_actions = []
 
         return
 
-    # Wrapper for print_board() for clients to access
-    def show_board(self, request, context):
-        
-        with self._key_lock:
-            # Print the entire board
-            self.print_board()
-
-            # Print the actions that this client has performed in their turn
-            for action in request.actions:
-                print(action)
-
-            # Add the new actions to the action list
-            self.action_list.append(request.actions)
-
-            self.last_output_len += len(request.actions)
-
-            return pokemonou_pb2.GameStatus(status=self.status)
 
 
     """
-    Trainer & Pokemon Functions
+    Client Functions
     """
-    # Called by a client whenever they are first built
-    # Will register the client with the server and designate a random emoji to the client based on their type
+
+    # Checks if the game is over by checking if all the pokemon are captured
+    def game_status(self, request, context):
+        # Iterate over all pokemon and check if all are captured
+        catch_count = 0
+        for pkmn, _ in self.pokemon.items():
+            for trainer, dex in self.trainer_pokedexes.items():
+                if pkmn in dex:
+                    catch_count += 1
+
+        if catch_count == len(self.pokemon) and catch_count == self.num_pkmn:
+            self.game_status = "over"
+        else:
+            self.game_status = "active"
+
+        return pokemonou_pb2.GameStatus(status=self.status)
+
+
+    # Registers a client with the server, and allocates them an emoji for their icon, and a location on the board
     def initialize_client(self, request, context):
-        emoji = ':skull:'
-        
+
+        _emoji = ":skull:"
+
         with self._key_lock:
             if request.type == "trainer":
+                # Add the trainer to the server if they are not already registered as a key in self.trainers dict
                 if request.name not in self.trainers:
-                    # Add the trainer to the server's list if they have not been added already
-                    # Choose a random emoji from the people emoji list
-                    emoji_idx = random.randint(0, len(self.people_emojis) - 1)
-                    
-                    # Check that the emoji hasn't been used yet
-                    while self.used_people_emojis[emoji_idx] is True:
-                        emoji_idx = random.randint(0, len(self.people_emojis) - 1)
-                    
-                    self.used_people_emojis[emoji_idx] = True
-                    emoji = self.people_emojis[emoji_idx]
 
-                    print(colored(f"{request.name} connected to the server."))
+                    # Choose a random emoji from the people emoji list, and check if it has been used
+                    emoji_idx = random.randint(0, len(self.people_emojis) - 1)
+                    while self.used_people_emojis[emoji_idx] == True:
+                        emoji_idx = random.randint(0, len(self.people_emojis) - 1)
+
+                    # Found an emoji - update the used people emoji list and send to the client
+                    self.used_people_emojis[emoji_idx] = True
+                    _emoji = self.people_emojis[emoji_idx]
+
+                    self.current_actions.append(request.name + " connected to the server as " + emoji.emojize(_emoji.strip()))
                 else:
-                    return pokemonou_pb2.ClientInfo(name=request.name, emojiID=emoji, xLocation=-1, yLocation=-1)
+                    # If client has already connected, return skull emoji to denote that
+                    return pokemonou_pb2.ClientInfo(name=request.name, emojiID=_emoji, xLocation=-1, yLocation=-1)
 
             elif request.type == "pokemon":
+                # Add the pokemon to the server if they are not already registered as a key in self.pokemon dict
                 if request.name not in self.pokemon:
-                    # Choose a random emoji from the animal emoji list
+
+                    # Choose a random emoji from animal emoji list, and check if it has been used
                     emoji_idx = random.randint(0, len(self.animal_emojis) - 1)
-                    
-                    # Check that the emoji hasn't been used yet
-                    while self.used_animal_emojis[emoji_idx] is True:
+                    while self.used_animal_emojis[emoji_idx] == True:
                         emoji_idx = random.randint(0, len(self.animal_emojis) - 1)
                     
+                    # Found an emoji - update the used animal list
                     self.used_animal_emojis[emoji_idx] = True
-                    emoji = self.animal_emojis[emoji_idx]
+                    _emoji = self.animal_emojis[emoji_idx]
 
-                    print(colored(f"{request.name} connected to the server."))
+                    self.current_actions.append(request.name + " connected to the server as " + emoji.emojize(_emoji.strip()))
                 else:
-                    return pokemonou_pb2.ClientInfo(name=request.name, emojiID=emoji, xLocation=-1, yLocation=-1)
+                    return pokemonou_pb2.ClientInfo(name=request.name, emojiID=_emoji, xLocation=-1, yLocation=-1)
 
-            # Assign location as well on an unoccupied spot on the board
-            # Unoccupied spots are denoted by a 0
-            x = random.randint(0, self.board_size-1)
-            y = random.randint(0, self.board_size-1)
+            # Assign the client a spot on the board as well
+            # Unoccupied spots are denoted by ":seedling:"
+            x = random.randint(0, self.board_size - 1)
+            y = random.randint(0, self.board_size - 1)
 
+            # If the spot is preoccupied, keep trying
             while self.game_board[x][y] != ":seedling:":
-                x = random.randint(0, self.board_size-1)
-                y = random.randint(0, self.board_size-1)
+                x = random.randint(0, self.board_size - 1)
+                y = random.randint(0, self.board_size - 1)  
 
-            # Adjust the board to have the trainer/pokemon's emoji
-            self.game_board[x][y] = emoji
+            # Put the emoji in the spot
+            self.game_board[x][y] = _emoji
 
-            # Add the location to the trainer and pokemon dictionaries, and the paths dictionaries
+            # Add the client and their location to the server's dictionaries and paths
             if request.type == "trainer":
                 self.trainers[request.name] = (x, y)
                 self.trainer_paths[request.name] = [(x, y)]
+                self.trainer_pokedexes[request.name] = []
             elif request.type == "pokemon":
                 self.pokemon[request.name] = (x, y)
                 self.pokemon_paths[request.name] = [(x, y)]
 
-            return pokemonou_pb2.ClientInfo(name=request.name, emojiID=emoji, xLocation=x, yLocation=y)
+        return pokemonou_pb2.ClientInfo(name=request.name, emojiID=_emoji, xLocation=x, yLocation=y)
 
 
+    # Returns the location of the nearest client of the opposite type to the client
     def check_board(self, request, context):
-        # Returns the location of the nearest opposite client
+
         with self._key_lock:
             current_x = request.xLocation
             current_y = request.yLocation
 
-            # Also return the location of the nearest client of opposite type
-            type = re.sub(r'[0-9]', '', request.name).lower().strip()
-            n_x = -1
-            n_y = -1
+            type = re.sub(r'[0-9]', '', request.name)
+            nx = -1
+            ny = -1
+            nearest_dist = self.board_size * 2
 
             if type == "trainer":
-                
-                # Check for if there are no pokemon
-                if len(self.pokemon) == 0:
+
+                # Check for the case where no pokemon are around
+                if len(self.pokemon) < 1:
                     return pokemonou_pb2.Location(x=current_x, y=current_y)
-                
-                nearest_dist = 1000
 
                 for pokemon, p_loc in self.pokemon.items():
                     dist = math.sqrt((current_x - p_loc[0])**2 + (current_y - p_loc[1])**2)
                     if dist < nearest_dist:
                         nearest_dist = dist
-                        n_x = p_loc[0]
-                        n_y = p_loc[1]
+                        nx = p_loc[0]
+                        ny = p_loc[1]
 
             elif type == "pokemon":
 
-                # Check for if there are no trainers
-                if len(self.trainers) == 0:
+                # Check for the case where no trainers are around
+                if len(self.trainers) < 1:
                     return pokemonou_pb2.Location(x=current_x, y=current_y)
-
-                nearest_dist = 1000
 
                 for trainer, t_loc in self.trainers.items():
                     dist = math.sqrt((current_x - t_loc[0])**2 + (current_y - t_loc[1])**2)
                     if dist < nearest_dist:
                         nearest_dist = dist
-                        n_x = t_loc[0]
-                        n_y = t_loc[1]
-            
-            else:
-                print("name error")
+                        nx = t_loc[0]
+                        ny = t_loc[1]
 
-            # Return the location of the nearest opposite type
-            return pokemonou_pb2.Location(x=n_x, y=n_y)
+            return pokemonou_pb2.Location(x=nx, y=ny)
 
 
+    # Checks that a move is legal, then moves the client to the specified spot
     def move(self, request, context):
-
+        
         with self._key_lock:
+
             # Check that the move is valid
-            x = request.newloc.x
-            y = request.newloc.y
+            nx = request.newloc.x
+            ny = request.newloc.y
 
-            if x < 0:
-                x = 0
-            
-            if x > self.board_size - 1:
-                x = self.board_size - 1
+            if nx < 0:
+                nx = 0
+            if nx > self.board_size - 1:
+                nx = self.board_size - 1
 
-            if y < 0:
-                y = 0
+            if ny < 0:
+                ny = 0
+            if ny > self.board_size - 1:
+                ny = self.board_size - 1
 
-            if y > self.board_size - 1:
-                y = self.board_size - 1
-
-            # Adjust the client's location and add to the path dictionaries
+            # Adjust the client's location and add to the path directories
             if request.name.type == "trainer":
-                self.trainers[request.name.name] = (x, y)
-                self.trainer_paths[request.name.name].append((x, y))
+                # Make sure there are no other trainers in this spot
+                if self.game_board[nx][ny] not in self.people_emojis:
+                    self.trainers[request.name.name] = (nx, ny)
+                    self.trainer_paths[request.name.name].append((nx, ny))
+                else:
+                    return pokemonou_pb2.Location(x=request.oldloc.x, y=request.oldloc.y)
+
             elif request.name.type == "pokemon":
-                self.pokemon[request.name.name] = (x, y)
-                self.pokemon_paths[request.name.name].append((x, y))
+                # Make sure there are no other pokemon in this spot
+                if self.game_board[nx][ny] not in self.animal_emojis:
+                    self.pokemon[request.name.name] = (nx, ny)
+                    self.pokemon_paths[request.name.name].append((nx, ny))
+                else:
+                    return pokemonou_pb2.Location(x=request.oldloc.x, y=request.oldloc.y)
 
-            # Change the client's location in the board 
-            old_x = request.oldloc.x
-            old_y = request.oldloc.y
-            self.game_board[old_x][old_y] = ":seedling:"
-            self.game_board[x][y] = request.emojiID
+            # Update the game_board to reflect the changes
+            self.game_board[request.oldloc.x][request.oldloc.y] = ":seedling:"
+            self.game_board[nx][ny] = request.emojiID
 
-            return pokemonou_pb2.Location(x=request.newloc.x, y=request.newloc.y)
+            # Add the action message to the lists
+            action_msg = f"{request.name.name} ({emoji.emojize(request.emojiID.strip())}) moved to ({nx}, {ny}) from ({request.oldloc.x}, {request.oldloc.y})"
+            self.action_list.append(action_msg)
+            self.current_actions.append(action_msg)
 
+            return pokemonou_pb2.Location(x=nx, y=ny)
+    
+    # Will display the entire path that a client has taken throughout the game
     def show_path(self, request, context):
 
-        # Print out the requested client's path
-        if request.type == "trainer":
-            path = self.trainer_paths[request.name]
-        elif request.type == "pokemon":
-            path = self.pokemon_paths[request.name]
+        type = re.sub(r'[0-9]', '', request.name)
 
-        loc_list = []
-        for loc in path:
-            print(str(loc[0]) + ", " + str(loc[1]))
-            loc_list.append(loc)
+        path_str = f"{request.name}'s path: "
+        if type == "trainer":
+            
+            for location in self.trainer_paths[request.name]:
+                path_str += f"({location[0]}, {location[1]}) -> "
+            path_str += "end"
 
-        return pokemonou_pb2.LocationList()
+        elif type == "pokemon":
+            for location in self.pokemon_paths[request.name]:
+                path_str += f"({location[0]}, {location[1]}) -> "
+            path_str += "end"
+
+        # Add the path string to the current actions to be performed
+        self.current_actions.append(path_str)
+
+        return pokemonou_pb2.Name(name=request.name, type=type)
 
 
     """
-    Trainer Services
+    Trainer Functions
     """
+    
+    # If a pokemon is in the space the trainer is in, then the trainer has captured it and it will be removed from the board
     def capture(self, request, context):
-
         with self._key_lock:
-            # Check if a pokemon is in the location specified
             x = request.xLocation
             y = request.yLocation
 
-            for pkmn, loc in self.pokemon.items():
+            for pokemon, loc in self.pokemon.items():
                 if x == loc[0] and y == loc[1]:
-                    # Found the pokemon
+                    # Found a pokemon - add it to the pokedex, and remove from pokemon dict
+                    self.trainer_pokedexes[request.name].append(pokemon)
+                    del self.pokemon[pokemon]
 
-                    # Adjust status - remove pokemon from the list
-                    self.trainer_pokedexes[request.name].append(pkmn)
-                    del self.pokemon[pkmn]
+                    # Add to the output list
+                    self.current_actions.append(f"{request.name} ({emoji.emojize(request.emojiID.strip())}) has captured {pokemon}")
 
-                    # Return the pokemon's name
-                    return pokemonou_pb2.Name(name=pkmn, type="pokemon")
+                    # Return the name of the pokemon
+                    return pokemonou_pb2.Name(name=pokemon, type="pokemon")
 
-            # Pokemon was not found - return failure to signify that
             return pokemonou_pb2.Name(name="failure", type="pokemon")
 
-
+    # Displays the entire pokedex of a trainer with all the pokemon they have caught
     def show_pokedex(self, request, context):
-        # Displays all the pokemon captured by a trainer
-        for trainer, dex in self.trainer_pokedexes.items():
-            if request.name == trainer:
-                print(trainer + "'s pokemon:")
-                for pkmn in dex:
-                    print("\t")
 
-        return pokemonou_pb2.Pokedex()
+        # Check if the Trainer's dex is empty, if not append each pokemon to a list to be output
+        pkdx_str = f"{request.name}'s Pokedex: "
+        if len(self.trainer_pokedexes[request.name]) == 0:
+            pkdx_str += "Empty"
+        else:
+            for pkmn in self.trainer_pokedexes[request.name]:
+                pkdx_str += f"{pkmn} - "
+
+        self.current_actions.append(pkdx_str)
+
+        return pokemonou_pb2.Name(name=request.name, type="trainer")
 
 
     """
-    Pokemon Services
+    Pokemon Functions
     """
-    def show_trainer_info(self, request, context):
-        # Displays the trainer's name and information for a pokemon if they are captured
-        for trainer, dex in self.trainer_pokedexes.items():
-            if request.name in dex:
+
+    # If a pokemon is captured, this will let them know
+    def captured(self, request, context):
+        # Check if this pokemon exists in any of the trainers pokedexes
+        for trainer, pokedex in self.trainer_pokedexes.items():
+            if request.name in pokedex:
                 return pokemonou_pb2.Name(name=trainer, type="trainer")
 
-        return pokemonou_pb2.Name(name="failure", type="trainer")
+        # Return the name as "free" if it is not captured
+        return pokemonou_pb2.Name(name="free", type="")
+
+
+    # Displays the trainer's name and emoji of the pokemon
+    def show_trainer_info(self, request, context):
+
+        for trainer, _ in self.trainers.items():
+            pokedex = self.trainer_pokedexes[trainer]
+            if request.name in pokedex:
+                self.current_actions.append(f"{trainer} owns {request.name}")
+                return pokemonou_pb2.Name(name=trainer, type="trainer")
 
 
 
@@ -365,12 +383,11 @@ The Server Class
 
 Handles input from both Trainers and Pokemon clients, and manages the grid
 """
-class Server:
-
-    # Handles input and output from the Trainer & Pokemon clients
-    def serve(self, boardsize):
-        server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-        game = PokemonOUGame(board_sz = boardsize)
+class Server():
+    
+    def serve(self, boardsize, totalpkmn):
+        server = grpc.server(futures.ThreadPoolExecutor(max_workers=boardsize**2))
+        game = PokemonOUGame(board_size=boardsize, total_pkmn=totalpkmn)
         pokemonou_pb2_grpc.add_PokemonOUServicer_to_server(game, server)
         server.add_insecure_port('[::]:50051')
         server.start()
@@ -384,24 +401,26 @@ class Server:
                     # Print a list of all the actions once all Pokemon are captured
                     game.actions()
 
-                    # Also print all the paths that the trainers and pokemon have taken
-                    # game.show_path()
-
                     # Stop the server
                     return
 
+                # Print the board every second, with the list of actions that have occurred
+                game.print_board()
+
                 time.sleep(1)
+
         except KeyboardInterrupt:
             server.stop(0)
-        return
 
+        return
 
 
 
 """
 The Pokemon Class
+    - A Pokemon will attempt to evade capture by running away from the nearest trainer
 """
-class Pokemon:
+class Pokemon():
 
     def __init__(self, my_name):
         # Initialize variables
@@ -411,72 +430,73 @@ class Pokemon:
         self.y_loc = -1
         return
 
+    # The Pokemon's gameplay loop:
+    #   If not captured, then run directly away from the nearest trainer until reaching a border
     def run(self):
-        with grpc.insecure_channel('server:50051') as channel:
+        with grpc.insecure_channel("server:50051") as channel:
             stub = pokemonou_pb2_grpc.PokemonOUStub(channel)
 
             # Initialize this Pokemon with the server, and get an emoji designation and location
-            response = stub.initialize_client(pokemonou_pb2.Name(name=self.name, type='pokemon'))
+            response = stub.initialize_client(pokemonou_pb2.Name(name=self.name, type="pokemon"))
             self.icon = response.emojiID
             self.x_loc = int(response.xLocation)
             self.y_loc = int(response.yLocation)
 
-            # Move around the board and avoid trainers
+            # Run away from Trainers and evade capture
             is_game_over = False
             while(not is_game_over):
-                action_msgs = pokemonou_pb2.ActionMsgs(actions=[])
 
-                # Check if captured
-                # If so, display trainer information
+                # Check if this pokemon was captured
+                # Server returning the name 'free' denotes that the pokemon is free
                 captured_res = stub.captured(pokemonou_pb2.Name(name=self.name, type="pokemon"))
                 if captured_res.name != "free":
-                    # The pokemon was captured - print trainer information
-                    stub.show_trainer_info(pokemonou_pb2.Name(captured_res.name))
 
-                    # The game is now over for the pokemon
+                    # The pokemon is captured - show its trainer info and its path, then exit
+                    trainer_res = stub.show_trainer_info(pokemonou_pb2.Name(name=self.name, type="trainer"))
+                    path_res = stub.show_path(pokemonou_pb2.Name(name=self.name, type="pokemon"))
                     return
-
-                # If not captured, then move away from the nearest trainer
-                check_res = stub.check_board(pokemonou_pb2.ClientInfo(name=self.name, emojiID=self.icon, xLocation=self.x_loc, yLocation=self.y_loc))
-                closest_trainer_x = check_res.x
-                closest_trainer_y = check_res.y
-
-                # Move in the opposite direction of the nearest trainer
-                new_x = -1
-                new_y = -1
-
-                if closest_trainer_x < self.x_loc:
-                    new_x = self.x_loc - 1
-                elif closest_trainer_x > self.x_loc:
-                    new_x = self.x_loc + 1
                 
-                if closest_trainer_y < self.y_loc:
-                    new_y = self.y_loc - 1
-                elif closest_trainer_y > self.y_loc:
-                    new_y = self.y_loc + 1
+                # Check where the nearest trainer is and move 1 spot in the opposite direction
+                check_res = stub.check_board(pokemonou_pb2.ClientInfo(name=self.name, emojiID=self.icon, xLocation=self.x_loc, yLocation=self.y_loc))
 
-                # Move
-                move_res = stub.move(pokemonou_pb2.MoveInfo(name=pokemonou_pb2.Name(name=self.name, type="pokemon"), emojiID=self.icon, oldloc=pokemonou_pb2.Location(x=self.x_loc, y=self.y_loc), newloc=pokemonou_pb2.Location(x=new_x, y=new_y)))
-                action_msgs.actions.append(f"{self.name} moved to ({move_res.x}, {move_res.y}) from ({self.x_loc}, {self.y_loc})")
+                dx = 0
+                dy = 0
+                nx = check_res.x
+                ny = check_res.y
 
-                # Adjust the pokemon's location
+                if nx < self.x_loc:
+                    dx = 1
+                elif nx > self.x_loc:
+                    dx = -1
+
+                if ny < self.y_loc:
+                    dy = 1
+                elif ny > self.y_loc:
+                    dy = -1
+
+                move_res = stub.move(pokemonou_pb2.MoveInfo(name=pokemonou_pb2.Name(name=self.name, type="pokemon"), 
+                                                            emojiID=self.icon, 
+                                                            oldloc=pokemonou_pb2.Location(x=self.x_loc, y=self.y_loc), 
+                                                            newloc=pokemonou_pb2.Location(x=self.x_loc+dx, y=self.y_loc+dy)))
+
+                # Update the x and y coords
                 self.x_loc = move_res.x
                 self.y_loc = move_res.y
 
-                # After each move, have the server print the board
-                print_res = stub.show_board(action_msgs)
-
-                # Check if the game is over
-                status_res = stub.game_status(pokemonou_pb2.Name(name=self.name, type="pokemon"))
+                # Check the status of the game
+                status_res = stub.game_status(pokemonou_pb2.Name(name=self.name, type="trainer"))
                 is_game_over = status_res.status == "over"
+
+                time.sleep(1)
 
         return
 
 
 """
 The Trainer Class
+    - A Trainer will attempt to capture the nearest pokemon
 """
-class Trainer:
+class Trainer():
 
     def __init__(self, my_name):
         # Initialize variables
@@ -487,79 +507,64 @@ class Trainer:
         self.pokedex = []
         return
 
-    # Run the gameplay loop for the trainer
+    # The Trainer gameplay loop:
+    #   If a pokemon is at the current spot, capture it, if not move towards the nearest one and attempt one more capture
     def run(self):
-        with grpc.insecure_channel('server:50051') as channel:
+        with grpc.insecure_channel("server:50051") as channel:
             stub = pokemonou_pb2_grpc.PokemonOUStub(channel)
 
-            # Initialize this trainer with the server, and get an emoji designation
-            response = stub.initialize_client(pokemonou_pb2.Name(name=self.name, type='trainer'))
+            # Initialize this Pokemon with the server, and get an emoji designation and location
+            response = stub.initialize_client(pokemonou_pb2.Name(name=self.name, type="trainer"))
             self.icon = response.emojiID
-            self.x_loc = response.xLocation
-            self.y_loc = response.yLocation
+            self.x_loc = int(response.xLocation)
+            self.y_loc = int(response.yLocation)
 
-            # Move and attempt to capture pokemon
+            # Move and attempt to capture Pokemon
             is_game_over = False
             while(not is_game_over):
-                action_msgs = pokemonou_pb2.ActionMsgs(actions=[])
 
-                # Check if a pokemon is in this space - if so, catch it, otherwise move
+                # Check if there is a Pokemon in this spot
                 capture_res = stub.capture(pokemonou_pb2.ClientInfo(name=self.name, emojiID=self.icon, xLocation=self.x_loc, yLocation=self.y_loc))
-                
-                # Check if capture was a success
-                if capture_res.name != "failure":
-                    # Success -- add the pokemon's name to the pokedex
-                    self.pokedex.append(capture_res.name)
-                    action_msgs.actions.append(f'{self.name} captured {capture_res.name}')
-                else:    
-                    # Failure -- did not capture a pokemon
-                    # Move by checking the board, then finding suitable location
+                if capture_res.name == "failure":
+                    # No Pokemon was caught - move towards the nearest pokemon and attempt a capture again
                     check_res = stub.check_board(pokemonou_pb2.ClientInfo(name=self.name, emojiID=self.icon, xLocation=self.x_loc, yLocation=self.y_loc))
 
-                    # Get the value of the closest Pokemon, and attempt to move towards that
-                    closest_mon_x = check_res.x
-                    closest_mon_y = check_res.y
+                    dx = 0
+                    dy = 0
 
-                    # Move towards the nearest Pokemon, as long as there is a valid pokemon
-                    new_x = -1
-                    new_y = -1
-                    if closest_mon_x != -1 and closest_mon_y != -1:
-                        if closest_mon_x < self.x_loc:
-                            new_x = self.x_loc - 1
-                        elif closest_mon_x > self.x_loc:
-                            new_x = self.x_loc + 1
-                        
-                        if closest_mon_y < self.y_loc:
-                            new_y = self.y_loc - 1
-                        elif closest_mon_y > self.y_loc:
-                            new_y = self.y_loc + 1
+                    nx = check_res.x
+                    ny = check_res.y
 
-                    move_res = stub.move(pokemonou_pb2.MoveInfo(name=pokemonou_pb2.Name(name=self.name, type="trainer"), emojiID=self.icon, oldloc=pokemonou_pb2.Location(x=self.x_loc, y=self.y_loc), newloc=pokemonou_pb2.Location(x=new_x, y=new_y)))
+                    if nx < self.x_loc:
+                        dx = -1
+                    elif nx > self.x_loc:
+                        dx = 1
 
-                    # A -1 returned for x or y will denote an invalid move
-                    if move_res.x != -1 and move_res.y != -1:
-                        # Add this action to the action messages list
-                        action_msg = self.name + " moved to (" + str(new_x) + ", " + str(new_y) + ") from (" + str(self.x_loc) + ", " + str(self.y_loc) + ")"
-                        action_msgs.actions.append(action_msg)
+                    if ny < self.y_loc:
+                        dy = -1
+                    elif ny > self.y_loc:
+                        dy = 1
 
-                        # Adjust x and y locations
-                        self.x_loc = move_res.x
-                        self.y_loc = move_res.y
+                    move_res = stub.move(pokemonou_pb2.MoveInfo(name=pokemonou_pb2.Name(name=self.name, type="trainer"), 
+                                                                emojiID=self.icon, 
+                                                                oldloc=pokemonou_pb2.Location(x=self.x_loc, y=self.y_loc), 
+                                                                newloc=pokemonou_pb2.Location(x=self.x_loc+dx, y=self.y_loc+dy)))
 
-                    # Attempt a capture again in the new space after moving
+                    # Update the x and y coords
+                    self.x_loc = move_res.x
+                    self.y_loc = move_res.y
+
+                    # Check if the Trainer can catch a Pokemon now
                     capture2_res = stub.capture(pokemonou_pb2.ClientInfo(name=self.name, emojiID=self.icon, xLocation=self.x_loc, yLocation=self.y_loc))
-                    if capture2_res.name != "failure":
-                        self.pokedex.append(capture2_res.name)
-                        action_msgs.actions.append(f'{self.name} captured {capture2_res.name}')
 
-                # Ask the server to print the board at the end of every turn
-                print_res = stub.show_board(action_msgs)
 
                 # Check the status of the game
                 status_res = stub.game_status(pokemonou_pb2.Name(name=self.name, type="trainer"))
                 is_game_over = status_res.status == "over"
 
-            # Once the game is over, output the trainer's pokedex
+                time.sleep(1)
+
+            # Once the game is over, output this trainer's pokedex
             pokedex_res = stub.show_pokedex(pokemonou_pb2.Name(name=self.name, type="trainer"))
 
         return
@@ -578,13 +583,14 @@ if __name__ == '__main__':
 
     # Parse command-line arguments for size of board
     boardsz = int(sys.argv[1])
+    num_pkmn = int(sys.argv[2])
 
     # Determine which class the program is
     hostname = re.sub(r'[0-9]', '', socket.gethostname())
 
     if hostname == 'server':
         server = Server()
-        server.serve(boardsize=boardsz)
+        server.serve(boardsize=boardsz, totalpkmn=num_pkmn)
     elif hostname == 'trainer':
         trainer = Trainer(my_name=socket.gethostname())
         trainer.run()
