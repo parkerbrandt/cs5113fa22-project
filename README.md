@@ -1,6 +1,11 @@
 # Pokemon OU - CS 5113 Fall 2022
 ## By: Parker Brandt (ID: 113521131) 
 
+https://github.com/parkerbrandt/cs5113fa22-project
+
+
+Video Link: https://youtu.be/TUpXmWyQLzg
+
 
 ### The Project
 
@@ -9,7 +14,7 @@ PokemonOU is a game inspired by the Pokemon franchise by Nintendo and Game Freak
 
 ### Demonstration
 
-![Demo](media/parkerbrandt-cs5113fa22finalpres.mp4)
+![Demo](media/parkerbrandt-cs5113finalvid.mp4)
 
 
 ### Project Specific Parameters
