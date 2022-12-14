@@ -11,240 +11,320 @@ services:
     build: .
     hostname: trainer0
     container_name: Trainer0
+    depends_on:
+       - "server"
     networks:
        - default
   client1:
     build: .
     hostname: trainer1
     container_name: Trainer1
+    depends_on:
+       - "server"
     networks:
        - default
   client2:
     build: .
     hostname: trainer2
     container_name: Trainer2
+    depends_on:
+       - "server"
     networks:
        - default
   client3:
     build: .
     hostname: trainer3
     container_name: Trainer3
+    depends_on:
+       - "server"
     networks:
        - default
   client4:
     build: .
     hostname: trainer4
     container_name: Trainer4
+    depends_on:
+       - "server"
     networks:
        - default
   client5:
     build: .
     hostname: trainer5
     container_name: Trainer5
+    depends_on:
+       - "server"
     networks:
        - default
   client6:
     build: .
     hostname: trainer6
     container_name: Trainer6
+    depends_on:
+       - "server"
     networks:
        - default
   client7:
     build: .
     hostname: trainer7
     container_name: Trainer7
+    depends_on:
+       - "server"
     networks:
        - default
   client8:
     build: .
     hostname: trainer8
     container_name: Trainer8
+    depends_on:
+       - "server"
     networks:
        - default
   client9:
     build: .
     hostname: trainer9
     container_name: Trainer9
+    depends_on:
+       - "server"
     networks:
        - default
   client10:
     build: .
     hostname: trainer10
     container_name: Trainer10
+    depends_on:
+       - "server"
     networks:
        - default
   client11:
     build: .
     hostname: trainer11
     container_name: Trainer11
+    depends_on:
+       - "server"
     networks:
        - default
   client12:
     build: .
     hostname: trainer12
     container_name: Trainer12
+    depends_on:
+       - "server"
     networks:
        - default
   client13:
     build: .
     hostname: trainer13
     container_name: Trainer13
+    depends_on:
+       - "server"
     networks:
        - default
   client14:
     build: .
     hostname: trainer14
     container_name: Trainer14
+    depends_on:
+       - "server"
     networks:
        - default
   client15:
     build: .
     hostname: trainer15
     container_name: Trainer15
+    depends_on:
+       - "server"
     networks:
        - default
   client16:
     build: .
     hostname: trainer16
     container_name: Trainer16
+    depends_on:
+       - "server"
     networks:
        - default
   client17:
     build: .
     hostname: trainer17
     container_name: Trainer17
+    depends_on:
+       - "server"
     networks:
        - default
   client18:
     build: .
     hostname: trainer18
     container_name: Trainer18
+    depends_on:
+       - "server"
     networks:
        - default
   client19:
     build: .
     hostname: trainer19
     container_name: Trainer19
+    depends_on:
+       - "server"
     networks:
        - default
   client20:
     build: .
     hostname: pokemon0
     container_name: Pokemon0
+    depends_on:
+       - "server"
     networks:
        - default
   client21:
     build: .
     hostname: pokemon1
     container_name: Pokemon1
+    depends_on:
+       - "server"
     networks:
        - default
   client22:
     build: .
     hostname: pokemon2
     container_name: Pokemon2
+    depends_on:
+       - "server"
     networks:
        - default
   client23:
     build: .
     hostname: pokemon3
     container_name: Pokemon3
+    depends_on:
+       - "server"
     networks:
        - default
   client24:
     build: .
     hostname: pokemon4
     container_name: Pokemon4
+    depends_on:
+       - "server"
     networks:
        - default
   client25:
     build: .
     hostname: pokemon5
     container_name: Pokemon5
+    depends_on:
+       - "server"
     networks:
        - default
   client26:
     build: .
     hostname: pokemon6
     container_name: Pokemon6
+    depends_on:
+       - "server"
     networks:
        - default
   client27:
     build: .
     hostname: pokemon7
     container_name: Pokemon7
+    depends_on:
+       - "server"
     networks:
        - default
   client28:
     build: .
     hostname: pokemon8
     container_name: Pokemon8
+    depends_on:
+       - "server"
     networks:
        - default
   client29:
     build: .
     hostname: pokemon9
     container_name: Pokemon9
+    depends_on:
+       - "server"
     networks:
        - default
   client30:
     build: .
     hostname: pokemon10
     container_name: Pokemon10
+    depends_on:
+       - "server"
     networks:
        - default
   client31:
     build: .
     hostname: pokemon11
     container_name: Pokemon11
+    depends_on:
+       - "server"
     networks:
        - default
   client32:
     build: .
     hostname: pokemon12
     container_name: Pokemon12
+    depends_on:
+       - "server"
     networks:
        - default
   client33:
     build: .
     hostname: pokemon13
     container_name: Pokemon13
+    depends_on:
+       - "server"
     networks:
        - default
   client34:
     build: .
     hostname: pokemon14
     container_name: Pokemon14
+    depends_on:
+       - "server"
     networks:
        - default
   client35:
     build: .
     hostname: pokemon15
     container_name: Pokemon15
+    depends_on:
+       - "server"
     networks:
        - default
   client36:
     build: .
     hostname: pokemon16
     container_name: Pokemon16
+    depends_on:
+       - "server"
     networks:
        - default
   client37:
     build: .
     hostname: pokemon17
     container_name: Pokemon17
+    depends_on:
+       - "server"
     networks:
        - default
   client38:
     build: .
     hostname: pokemon18
     container_name: Pokemon18
+    depends_on:
+       - "server"
     networks:
        - default
   client39:
     build: .
     hostname: pokemon19
     container_name: Pokemon19
+    depends_on:
+       - "server"
     networks:
        - default
 networks:
