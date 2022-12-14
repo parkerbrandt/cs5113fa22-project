@@ -38,6 +38,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
         self.people_emojis = []             # List of emojis for trainers to use ([string]) - https://emojipedia.org/people/ 
         self.used_people_emojis = []        # List of booleans corresponding to people_emojis that has True if that emoji has been used
 
+        self.capture_counter = 0
         self.num_pkmn = total_pkmn          # The int number of total pokemon that will be added
                                             # Used so game cannot end prematurely before all Pokemon are added
         self.pokemon = {}                   # Dict: key = pokemon's name (string), value = current location ((int, int) tuple)
@@ -120,14 +121,8 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
 
     # Checks if the game is over by checking if all the pokemon are captured
     def game_status(self, request, context):
-        # Iterate over all pokemon and check if all are captured
-        catch_count = 0
-        for pkmn, _ in self.pokemon.items():
-            for trainer, dex in self.trainer_pokedexes.items():
-                if pkmn in dex:
-                    catch_count += 1
-
-        if catch_count == len(self.pokemon) and catch_count == self.num_pkmn:
+        # Can check if all pokemon are captured by checking if self.pokemon is empty
+        if len(self.pokemon) == 0 and self.capture_counter == self.num_pkmn:
             self.game_status = "over"
         else:
             self.game_status = "active"
@@ -327,6 +322,7 @@ class PokemonOUGame(pokemonou_pb2_grpc.PokemonOUServicer):
                     # Found a pokemon - add it to the pokedex, and remove from pokemon dict
                     self.trainer_pokedexes[request.name].append(pokemon)
                     del self.pokemon[pokemon]
+                    self.capture_counter += 1
 
                     # Add to the output list
                     self.current_actions.append(f"{request.name} ({emoji.emojize(request.emojiID.strip())}) has captured {pokemon}")
