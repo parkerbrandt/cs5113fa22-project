@@ -4,22 +4,19 @@ package pokemonOU;
 
 service PokemonOU {
 
-    // Server Services
-    rpc game_status(Name) returns (GameStatus) {}
-    rpc captured(Name) returns (Name) {}
-    rpc show_board(ActionMsgs) returns (GameStatus) {}
-
 	// Services ran on the server for both Trainers and Pokemon
+    rpc game_status(Name) returns (GameStatus) {}
 	rpc initialize_client(Name) returns (ClientInfo) {}
     rpc check_board(ClientInfo) returns (Location) {}
     rpc move(MoveInfo) returns (Location) {}
-    rpc show_path(Name) returns (LocationList) {}
+    rpc show_path(Name) returns (Name) {}
 
     // Trainer Services
     rpc capture(ClientInfo) returns (Name) {}
-    rpc show_pokedex(Name) returns (Pokedex) {}
+    rpc show_pokedex(Name) returns (Name) {}
 
     // Pokemon Services
+    rpc captured(Name) returns (Name) {}
     rpc show_trainer_info(Name) returns (Name) {}
 }
 
@@ -39,11 +36,6 @@ message ClientInfo {
     int32 yLocation = 4;
 }
 
-message Pokedex {
-    string trainername = 1;             // The name of the trainer who owns these Pokemon
-    repeated string pokemonnames = 2;   // The names of the pokemon in the pokedex
-}
-
 message Location {
     int32 x = 1;
     int32 y = 2;
@@ -58,8 +50,4 @@ message MoveInfo {
     string emojiID = 2;
     Location oldloc = 3;
     Location newloc = 4;
-}
-
-message ActionMsgs {
-    repeated string actions = 2;
 }
