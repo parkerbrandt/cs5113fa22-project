@@ -4,7 +4,12 @@
 
 ### The Project
 
-PokemonOU is a game inspired by the Pokemon franchise by Nintendo and Game Freak. Instead of having a user control a "Trainer" and run around attempting to capture Pokemon, machines are created instead to 
+PokemonOU is a game inspired by the Pokemon franchise by Nintendo and Game Freak. Instead of having a user control a "Trainer" and run around attempting to capture Pokemon, machines are created instead to emulate a certain number of Trainers and Pokemon. The Pokemon run away from the Trainers, and attempt to avoid capture. The Trainers run towards the Pokemon, and if they are in the same spot as a Pokemon on the game board, they will have captured the Pokemon, which takes them off the board, and puts them in the Trainer's pokedex. Trainers and Pokemon are both represented by emojis. Trainers have "people" emojis, while Pokemon have "animal" emojis. The game ends once all the Pokemon have been captured by the Trainers at which point the Server will then output all of the actions that have occurred during the game.
+
+
+### Demonstration
+
+![Demo](media/parkerbrandt-cs5113fa22finalpres.mp4)
 
 
 ### Project Specific Parameters
@@ -40,13 +45,35 @@ NOTE: If 'up' is not specified int the above command, the code will not automati
 
 #### docker-generate.py
 
-As mentioned in the "How to Run" section, 'docker-generate.py' asks the user for the size of the game board to create, the number of trainers, and the number of pokemon to create as well. Once this is done, the script rewrites 'docker-compose.yml'
+As mentioned in the "How to Run" section, 'docker-generate.py' asks the user for the size of the game board to create, the number of trainers, and the number of pokemon to create as well. Once this is done, the script rewrites 'docker-compose.yml' and 'Dockerfile' to account for the correct number of Trainers and Pokemon. 
 
 
 #### node.py
 
-This file 
+This file holds all the actual logic for the machines that will be run. Houses classes for running the Server, Trainer, and Pokemon machines. When each machine runs the code, they will initially branch into their respective machine by checking what the hostname of the machine is. Once the code branches, it will perform one of three game loops:
 
+##### Server class
+    - The Server class creates the PokemonOUGame object, which handles receiving and responding to Client RPC requests, and handles logic.
+    - PokemonOUGame Functions:</br>
+        - actions() : (Only accessible by Server class) Will print out a list of every action that has taken place during the game.</br>
+        - print_board() : (Only accessible by Server class) Will print out the game board in its current state, including using emojis as placeholders for Trainers and Pokemon on the board. Will erase the previous board's output to give the illusion of movement. Will also output action messages as they happen in the game. This function is called once per second by the server.</br>
+        - game_status() : Checks if all pokemon have been captured, and if so, will change the game status to be "over"</br>
+        - initialize_client() : Called by a Client when first launched, the Server will register the name and type (Trainer or Pokemon) within the Server, and then the server will give the client a location on the board, and an emoji</br>
+        - check_board() : Returns the location of the nearest client of the other type, so a Pokemon can either run away, or a Trainer can run towards that client</br>
+        - move() : A client will enter a location to move to, this function will ensure that the move is not an illegal move, and then will move the client to a legal spot, and show it on the board</br>
+        - show_path() : Displays the entire path that a Trainer or Pokemon has taken from spawn to end of game</br>
+        - capture() : Checks if a Pokemon is in the same spot as a Trainer, and if so, will capture it and remove it from the board</br>
+        - show_pokedex() : Will display the pokemon that a trainer has caught over the course of the game</br>
+        - captured() : Tells a Pokemon if they have been caught or not, and if so, they will end their machine
+        - show_trainer_info() : Once a Pokemon is captured, will display the information of the Trainer that has captured them
+
+#### Client classes
+    - The Pokemon Class</br>
+        - While the Pokemon is not captured, it will get the location of the nearest Trainer, then run in the opposite direction by one unit.
+
+
+    - The Trainer Class</br>
+        - While the game is not over, the Trainer will check if there is a Pokemon in the spot they are currently in, and if so, they capture it, otherwise they will move and attempt a capture again.
 
 ### File Structure
 
